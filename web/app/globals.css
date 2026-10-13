@@ -237,3 +237,6 @@ ul { list-style: none; }
 .step-card p { font-size: 14px; color: var(--text-2); line-height: 1.55; }
 .fullbody { position: relative; width: 100%; aspect-ratio: 1097 / 960; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 14px; }
 .fullbody img { object-fit: cover; }
+
+/* 버튼이 flex 컨테이너 안에서 찌그러지지 않도록 고정 (모바일 터치 영역 최소 48px) */
+.btn { flex-shrink: 0; min-height: 50px; }

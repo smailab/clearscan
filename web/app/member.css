@@ -100,3 +100,14 @@
 .locked-banner > b { color: var(--primary); flex: none; }
 .locked-cta { display: flex; flex-direction: column; gap: 4px; margin: 14px 0 6px; background: var(--primary-soft); border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: var(--text-2); }
 .locked-cta b { color: var(--primary); font-size: 15px; }
+
+/* ---------- 모바일 터치 영역 보정 ---------- */
+.au-form .btn { height: 52px; font-size: 16px; }
+.au-row { gap: 8px; }
+.au-link { min-height: 44px; padding: 0 4px; display: inline-flex; align-items: center; }
+.au-alt a { display: inline-block; padding: 10px 4px; }
+.bk-seg button { min-height: 48px; }
+.header-right a, .header-right button { min-height: 36px; display: inline-flex; align-items: center; }
+.header-right .join-btn { padding: 6px 12px; min-height: 32px; }
+.my-cancel { min-height: 40px; padding: 8px 14px; }
+.re-actions .btn { min-height: 36px; }
