@@ -1,0 +1,101 @@
+/* ---------- 예약 ---------- */
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.bk-steps { display: flex; background: var(--surface); padding: 14px 16px 0; gap: 4px; }
+.bk-steps span { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: var(--text-3); padding-bottom: 12px; border-bottom: 2px solid var(--line); }
+.bk-steps b { width: 22px; height: 22px; border-radius: 50%; background: var(--line); color: #fff; display: grid; place-items: center; font-size: 11px; }
+.bk-steps .on { color: var(--primary); font-weight: 700; border-color: var(--primary); }
+.bk-steps .on b, .bk-steps .past b { background: var(--primary); }
+.bk-steps .past { color: var(--text-2); border-color: #b9cbff; }
+.bk-h { font-size: 18px; font-weight: 700; margin-bottom: 14px; letter-spacing: -.3px; }
+
+.bk-plans { display: flex; flex-direction: column; gap: 8px; }
+.bk-plan { position: relative; display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "kind nm pr" "kind tm pr"; column-gap: 12px; align-items: center; border: 1.5px solid var(--line); border-radius: 12px; padding: 14px; cursor: pointer; }
+.bk-plan input, .bk-couple input { position: absolute; opacity: 0; pointer-events: none; }
+.bk-plan.on { border-color: var(--primary); background: #f7f9ff; }
+.bk-plan .kind { grid-area: kind; width: 38px; height: 38px; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; font-size: 11px; font-weight: 800; color: var(--navy); }
+.bk-plan.on .kind { background: var(--primary); color: #fff; }
+.bk-plan .nm { grid-area: nm; font-size: 15px; font-weight: 700; }
+.bk-plan .tm { grid-area: tm; font-size: 12px; color: var(--text-3); }
+.bk-plan .pr { grid-area: pr; font-size: 15px; font-weight: 800; color: var(--navy); }
+.bk-couple { position: relative; display: flex; gap: 10px; align-items: center; margin-top: 12px; border-radius: 12px; padding: 14px; background: var(--surface-2); cursor: pointer; border: 1.5px solid transparent; }
+.bk-couple .box-ck { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid #b9c0cf; background: #fff; flex: none; display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 800; }
+.bk-couple.on { border-color: var(--primary); background: #f7f9ff; }
+.bk-couple.on .box-ck { background: var(--primary); border-color: var(--primary); }
+.bk-couple b { display: block; font-size: 14px; }
+.bk-couple small { font-size: 12px; color: var(--text-2); }
+
+.bk-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.bk-cal-head strong { font-size: 16px; font-weight: 700; }
+.bk-cal-head button { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); font-size: 20px; line-height: 1; color: var(--text); display: grid; place-items: center; }
+.bk-cal-head button:disabled { opacity: .3; cursor: not-allowed; }
+.bk-cal-head button:not(:disabled):hover { background: var(--primary-soft); border-color: var(--primary); }
+.bk-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.bk-cal .wd { text-align: center; font-size: 12px; color: var(--text-3); padding: 4px 0 6px; }
+.bk-cal .wd.sun { color: #e5484d; }
+.bk-cal .wd.sat { color: var(--primary); }
+.bk-cal button { position: relative; aspect-ratio: 1; max-height: 56px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: var(--text); }
+.bk-cal button b { font-weight: inherit; }
+.bk-cal button small { position: absolute; top: 3px; font-size: 9.5px; font-weight: 700; color: var(--primary); }
+.bk-cal button.sat { color: var(--primary); }
+.bk-cal button.sun { color: #e5484d; }
+.bk-cal button:not(:disabled):hover { background: var(--primary-soft); }
+.bk-cal button:disabled { color: #c3cad6; cursor: not-allowed; }
+.bk-cal button.out { color: #dde2ea; }
+.bk-cal button.on { background: var(--primary); color: #fff; }
+.bk-cal button.on small { color: #dbe4ff; }
+.bk-times { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.bk-times button { height: 42px; border-radius: 10px; border: 1.5px solid var(--line); font-size: 14px; font-weight: 600; }
+.bk-times button:disabled { background: var(--surface-2); color: #c3cad6; text-decoration: line-through; cursor: not-allowed; }
+.bk-times button.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.bk-empty { font-size: 14px; color: var(--text-2); background: var(--surface-2); border-radius: 10px; padding: 18px; text-align: center; }
+
+.bk-fields { display: flex; flex-direction: column; gap: 14px; }
+.bk-field { display: flex; flex-direction: column; gap: 6px; }
+.bk-field > span { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.bk-field input, .bk-field textarea, .admin-login input { font: inherit; font-size: 15px; border: 1.5px solid var(--line); border-radius: 10px; padding: 12px 14px; outline: none; background: var(--surface); color: var(--text); }
+.bk-field input:focus, .bk-field textarea:focus, .admin-login input:focus { border-color: var(--primary); }
+.bk-field textarea { resize: vertical; }
+.bk-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.bk-seg button { height: 46px; border-radius: 10px; border: 1.5px solid var(--line); font-weight: 600; }
+.bk-seg button.on { border-color: var(--primary); color: var(--primary); background: #f7f9ff; }
+.bk-checks { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.bk-checks label, .bk-consent label { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; cursor: pointer; line-height: 1.45; }
+.bk-checks input, .bk-consent input { width: 18px; height: 18px; accent-color: var(--primary); flex: none; margin-top: 1px; }
+.bk-consent { margin-top: 24px; border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.bk-consent label:first-child { padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.bk-consent p { font-size: 11.5px; color: var(--text-3); margin: -4px 0 4px 28px; line-height: 1.5; }
+
+.bk-summary { border: 1px solid var(--line); border-radius: 12px; padding: 4px 16px; }
+.bk-summary > div { display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.bk-summary > div:last-child { border: 0; }
+.bk-summary dt { width: 84px; flex: none; color: var(--text-3); }
+.bk-summary dd { font-weight: 600; line-height: 1.5; }
+.bk-summary dd small { font-weight: 400; color: var(--text-2); }
+.bk-summary .total dd { font-size: 18px; font-weight: 800; color: var(--primary); }
+.bk-error { margin: 12px 16px 0; background: #fff1f1; color: #d93036; border-radius: 10px; padding: 12px 14px; font-size: 13.5px; }
+.sec .bk-error, .admin .bk-error { margin: 12px 0 0; }
+
+.bk-done { text-align: center; padding-top: 40px; }
+.bk-done h1 { font-size: 22px; font-weight: 800; margin-top: 14px; }
+.bk-done .sub { font-size: 13.5px; color: var(--text-2); margin-top: 6px; }
+.bk-check { width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: #fff; display: grid; place-items: center; font-size: 26px; font-weight: 800; margin: 0 auto; }
+.bk-code { font-size: 28px; font-weight: 800; letter-spacing: 2px; color: var(--navy); background: var(--primary-soft); border-radius: 12px; padding: 14px; margin: 18px 0; }
+.bk-done .bk-summary, .bk-done .box { text-align: left; }
+.bk-actions { display: flex; gap: 8px; margin-top: 18px; }
+.bk-actions .btn { flex: 1; }
+
+/* ---------- 관리자 ---------- */
+.admin { max-width: 1200px; margin: 0 auto; padding: 32px 20px; background: var(--surface); min-height: 100vh; }
+.admin h1 { font-size: 24px; font-weight: 800; margin-bottom: 12px; }
+.admin-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.admin-head a, .admin-head button { font-size: 13px; color: var(--text-2); text-decoration: underline; }
+.admin-stat { font-size: 14px; color: var(--text-2); margin-bottom: 16px; }
+.admin-login { display: flex; gap: 8px; flex-wrap: wrap; max-width: 420px; }
+.admin-login input { flex: 1; }
+.admin-table { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+.admin table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.admin th { background: var(--surface-2); text-align: left; font-weight: 600; color: var(--text-2); white-space: nowrap; }
+.admin th, .admin td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.admin td small { color: var(--text-3); }
+.admin tr.cancelled td { color: #b9c0cf; text-decoration: line-through; }
+.admin .warn { background: var(--warn-bg); color: #b36b00; border-radius: 4px; padding: 1px 6px; font-weight: 600; }
