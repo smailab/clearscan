@@ -33,7 +33,6 @@ export type Plan = {
   name: string;
   time: string;
   desc: string;
-  price: number;
   featured?: boolean;
   image: string;
   groups: PlanGroup[];
@@ -41,7 +40,7 @@ export type Plan = {
 
 export const plans: Plan[] = [
   {
-    id: 'annual', kind: 'MRI', name: '연간 MRI', time: '촬영 약 22분', price: 1390000, featured: true, image: '/images/fullbody.webp',
+    id: 'annual', kind: 'MRI', name: '연간 MRI', time: '촬영 약 22분', featured: true, image: '/images/fullbody.webp',
     desc: '매년 한 번, 초기 암 징후를 포함해 수백 가지 질환을 폭넓게 살펴보는 기본 검진',
     groups: [
       { label: '검사 부위', items: ['머리 · 목 · 복부 · 골반', '뇌 · 갑상선', '간 · 담낭 · 췌장 · 비장', '신장 · 부신 · 방광', '난소 · 자궁 / 전립선'] },
@@ -50,7 +49,7 @@ export const plans: Plan[] = [
     ],
   },
   {
-    id: 'spine', kind: 'MRI', name: '척추 포함 MRI', time: '촬영 약 47분', price: 2360000, image: '/images/scan-man.png',
+    id: 'spine', kind: 'MRI', name: '척추 포함 MRI', time: '촬영 약 47분', image: '/images/scan-man.png',
     desc: '연간 MRI의 모든 항목에 척추 정밀 평가를 더한 검진',
     groups: [
       { label: '검사 부위', items: ['연간 MRI 전 항목', '척추 (경추 · 흉추 · 요추)'] },
@@ -59,7 +58,7 @@ export const plans: Plan[] = [
     ],
   },
   {
-    id: 'neuro', kind: 'MRI', name: '근골격·신경 정밀 MRI', time: '촬영 약 120분 (2회 방문)', price: 5560000, image: '/images/brain-mri.png',
+    id: 'neuro', kind: 'MRI', name: '근골격·신경 정밀 MRI', time: '촬영 약 120분 (2회 방문)', image: '/images/brain-mri.png',
     desc: '척추 포함 MRI에 신경계와 근골격계 심층 분석까지 더한 가장 포괄적인 검진',
     groups: [
       { label: '검사 부위', items: ['척추 포함 MRI 전 항목', '고관절 · 무릎', '머리 · 목 동맥 (MR 혈관조영)', '뇌 나이 분석', '체성분 분석'] },
@@ -69,7 +68,7 @@ export const plans: Plan[] = [
     ],
   },
   {
-    id: 'heart-ct', kind: 'CT', name: '심장 CT', time: '촬영 약 5분', price: 490000, image: '/images/consult.png',
+    id: 'heart-ct', kind: 'CT', name: '심장 CT', time: '촬영 약 5분', image: '/images/consult.png',
     desc: '관상동맥 석회화 수치로 심혈관 질환 위험도를 평가하는 검사',
     groups: [
       { label: '측정 항목', items: ['관상동맥 석회화 점수 (심전도 동기화 촬영)'] },
@@ -77,7 +76,7 @@ export const plans: Plan[] = [
     ],
   },
   {
-    id: 'lung-ct', kind: 'CT', name: '폐 CT', time: '촬영 약 3분', price: 550000, image: '/images/lobby.png',
+    id: 'lung-ct', kind: 'CT', name: '폐 CT', time: '촬영 약 3분', image: '/images/lobby.png',
     desc: '폐암을 초기 단계에서 찾아내기 위한 선별 검사',
     groups: [
       { label: '검사 부위', items: ['폐 및 주변 흉부 구조'] },
@@ -85,13 +84,6 @@ export const plans: Plan[] = [
       { label: '제외 부위', excluded: true, items: ['유방', '췌장 · 간 · 신장', '식도 · 소장 · 대장'] },
     ],
   },
-];
-
-export const coupleDiscounts = [
-  { name: '연간 MRI', save: '24만원' },
-  { name: '척추 포함 MRI', save: '31만원' },
-  { name: '척추 포함 MRI + CT', save: '35만원' },
-  { name: '근골격·신경 정밀', save: '42만원' },
 ];
 
 export const facts = [

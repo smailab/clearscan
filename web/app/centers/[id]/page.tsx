@@ -5,13 +5,14 @@ import { notFound } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { CopyButton, Gallery, Hours, SectionTabs } from '@/components/center/CenterParts';
 import { Chevron } from '@/components/icons';
-import { centers, getCenter, mapLinks, plans, won } from '@/lib/data';
+import { getCenter, mapLinks, plans, won } from '@/lib/data';
+import { currentUser } from '@/lib/auth/members';
+import { getPricing } from '@/lib/pricing';
 
 type Params = { params: Promise<{ id: string }> };
 
-export function generateStaticParams() {
-  return centers.map(c => ({ id: c.id }));
-}
+// 요금은 회원에게만 보여주므로 요청마다 로그인 여부를 확인한다
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const c = getCenter((await params).id);
@@ -32,6 +33,7 @@ export default async function CenterPage({ params }: Params) {
   const c = getCenter((await params).id);
   if (!c) notFound();
 
+  const prices = (await currentUser()) ? getPricing().prices : null;
   const links = mapLinks(c);
   const centerPlans = plans.filter(p => c.planIds.includes(p.id));
   const fullAddress = `${c.address} ${c.addressDetail}`;
@@ -154,7 +156,7 @@ export default async function CenterPage({ params }: Params) {
               <Link href={`/booking?plan=${p.id}`}>
                 <span className="kind">{p.kind}</span>
                 <span className="txt"><b>{p.name}</b><small>{p.time}</small></span>
-                <span className="pr">{won(p.price)}원</span>
+                {prices ? <span className="pr">{won(prices[p.id])}원</span> : <span className="pr locked">🔒 회원 전용</span>}
                 <Chevron className="chev" />
               </Link>
             </li>

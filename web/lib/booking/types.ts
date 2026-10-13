@@ -14,6 +14,7 @@ export type Survey = {
 
 export type Booking = {
   code: string;
+  userId?: string;
   planId: string;
   resource: 'MRI' | 'CT';
   date: string;
@@ -34,8 +35,7 @@ export type BookingRequest = {
   couple: boolean;
   date: string;
   time: string;
-  person: Person;
-  partner?: Person;
+  partner?: Person; // 예약자 본인 정보는 로그인한 회원 정보에서 가져온다
   survey: Survey;
   consent: { privacy: boolean; sensitive: boolean };
 };

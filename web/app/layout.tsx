@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import './booking.css';
 import './center.css';
+import './member.css';
 
 export const metadata: Metadata = {
   title: '클리어스캔 | 전신 MRI 정밀 검진',

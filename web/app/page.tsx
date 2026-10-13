@@ -6,17 +6,38 @@ import Plans from '@/components/Plans';
 import OrganGuide from '@/components/OrganGuide';
 import CenterList from '@/components/center/CenterList';
 import { Chevron, IconCalendar, IconPin, IconScan, IconWon } from '@/components/icons';
-import { coupleDiscounts, facts, factsNote, faqs, reviews, reviewsNote, site, steps } from '@/lib/data';
+import { facts, factsNote, faqs, reviews, reviewsNote, site, steps, won } from '@/lib/data';
+import { currentUser } from '@/lib/auth/members';
+import { getPricing } from '@/lib/pricing';
 
-export default function Home() {
+// 요금은 회원에게만 보여주므로 요청마다 로그인 여부를 확인한다
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const user = await currentUser();
+  const pricing = user ? getPricing() : null;
+
   return (
     <Shell>
       <section className="hero">
         <div className="notice"><span className="chip">🎉 이벤트</span><span className="msg">{site.notice}</span></div>
+        {user ? (
+          <Link className="member-strip" href="/my">
+            <span><b>{user.name}</b>님, 반가워요</span>
+            <b>내 예약·결과 보기 ›</b>
+          </Link>
+        ) : (
+          <Link className="member-strip join" href="/signup">
+            <span>회원가입하고 <b>검진 요금·예약</b> 확인하기</span>
+            <b>회원가입 ›</b>
+          </Link>
+        )}
         <HeroSlider />
         <div className="stat-row">
           <span className="stat-pill">📌 연 1회 MRI · 월 분할 결제 가능</span>
-          <span className="stat-right"><b>1,390,000</b>원부터</span>
+          {pricing
+            ? <span className="stat-right"><b>{won(pricing.from)}</b>원부터</span>
+            : <Link className="stat-right locked" href="/signup?next=%2F%23plans">🔒 요금은 회원 전용</Link>}
         </div>
       </section>
 
@@ -51,7 +72,7 @@ export default function Home() {
 
       {/* 검진 상품 */}
       <section className="sec" id="plans">
-        <Plans />
+        <Plans prices={pricing?.prices ?? null} />
       </section>
 
       {/* 커플 플랜 */}
@@ -60,7 +81,9 @@ export default function Home() {
           <p className="t">커플 플랜 · 함께 지키는 두 사람의 미래</p>
           <p>배우자, 가족, 친구와 같은 날 연이어 예약하면 한 번 방문으로 둘 다 검진을 마치고 할인도 받을 수 있습니다.</p>
           <ul>
-            {coupleDiscounts.map(c => <li key={c.name}><b>{c.save} 할인</b>{c.name}</li>)}
+            {pricing
+              ? pricing.coupleOffers.map(c => <li key={c.name}><b>{c.save} 할인</b>{c.name}</li>)
+              : ['연간 MRI', '척추 포함 MRI', '척추 포함 MRI + CT', '근골격·신경 정밀'].map(n => <li key={n}><b>🔒 회원 전용</b>{n}</li>)}
           </ul>
         </div>
       </section>

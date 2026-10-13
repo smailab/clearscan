@@ -3,10 +3,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { plans, won, site, type Plan } from '@/lib/data';
+import { plans, won, type Plan } from '@/lib/data';
 import { Chevron } from './icons';
 
-export default function Plans() {
+// prices: 로그인한 회원에게만 서버가 내려준다. 비회원(null)에게는 가격 대신 가입 안내를 보여준다
+export default function Plans({ prices }: { prices: Record<string, number> | null }) {
   const [kind, setKind] = useState<Plan['kind']>('MRI');
   const [open, setOpen] = useState<Plan | null>(null);
 
@@ -44,12 +45,20 @@ export default function Plans() {
             <div className="body">
               <span className="name">{p.name}</span>
               <span className="time">{p.time}</span>
-              <span className="price">{won(p.price)}<small>원</small></span>
+              {prices
+                ? <span className="price">{won(prices[p.id])}<small>원</small></span>
+                : <span className="price locked">🔒 회원 전용 요금</span>}
               <span className="detail">구성 자세히 보기 ›</span>
             </div>
           </button>
         ))}
       </div>
+      {!prices && (
+        <Link className="locked-banner" href={`/signup?next=${encodeURIComponent('/#plans')}`}>
+          <span>검진 요금은 <b>회원 전용</b>으로 안내해 드려요</span>
+          <b>회원가입 ›</b>
+        </Link>
+      )}
       <p className="note">※ 가격은 원화 환산 예시(VAT 포함)입니다. 검진 결과는 진단이 아니며, 이상 소견이 있으면 전문 진료가 필요할 수 있습니다.</p>
 
       {open && (
@@ -59,7 +68,14 @@ export default function Plans() {
             <h3>{open.name}</h3>
             <p className="time">{open.time}</p>
             <p className="desc">{open.desc}</p>
-            <p className="price">{won(open.price)}<small>원</small></p>
+            {prices
+              ? <p className="price">{won(prices[open.id])}<small>원</small></p>
+              : (
+                <Link className="locked-cta" href={`/signup?next=${encodeURIComponent('/#plans')}`}>
+                  <span>🔒 요금은 회원에게만 안내해 드려요</span>
+                  <b>회원가입하고 요금 보기 ›</b>
+                </Link>
+              )}
             {open.groups.map(g => (
               <div key={g.label} className={`grp${g.excluded ? ' ex' : ''}`}>
                 <h4>{g.label}</h4>

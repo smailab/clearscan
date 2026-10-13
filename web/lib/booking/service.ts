@@ -1,9 +1,11 @@
 import 'server-only';
 import { randomInt } from 'crypto';
-import { DuplicateCodeError, SlotConflictError, getStore } from './store';
+import type { User } from '@/lib/auth/members';
+import { priceFor } from '@/lib/pricing';
+import { DuplicateCodeError, SlotConflictError, getByCode, insert, listActive, listAll, listByUser, saveCancelled } from './store';
 import {
   canCancel, candidateStarts, getPlan, isBookableDate, isValidDate, kstToday, normalizePhone,
-  overlaps, priceFor, slotsNeeded, supportsCouple, toHHMM, toMin,
+  overlaps, slotsNeeded, supportsCouple, toHHMM, toMin,
 } from './schedule';
 import type { Booking, BookingRequest, Person, SlotInfo } from './types';
 
@@ -24,7 +26,7 @@ export async function getAvailability(planId: string, couple: boolean, date: str
   if (!plan) throw new BookingError('존재하지 않는 검진 상품입니다.');
   if (!isValidDate(date) || !isBookableDate(date)) return [];
   const need = slotsNeeded(planId, couple && supportsCouple(planId));
-  const taken = await (await getStore()).listActive(plan.kind, date);
+  const taken = await listActive(plan.kind, date);
   return candidateStarts(date, need).map(t => ({
     time: toHHMM(t),
     available: !taken.some(b => overlaps(t, need, toMin(b.time), b.slots)),
@@ -45,14 +47,15 @@ function validPerson(p: Person | undefined, label: string): Person {
 
 const TAKEN_MSG = '방금 다른 예약이 들어온 시간입니다. 다른 시간을 선택해 주세요.';
 
-export async function createBooking(req: BookingRequest): Promise<Booking> {
+// 예약자 본인 정보는 클라이언트 입력이 아니라 로그인한 회원 정보로 채운다
+export async function createBooking(req: BookingRequest, user: User): Promise<Booking> {
   const plan = getPlan(req.planId);
   if (!plan) throw new BookingError('존재하지 않는 검진 상품입니다.');
   if (!req.consent?.privacy || !req.consent?.sensitive) throw new BookingError('개인정보 및 민감정보 수집·이용에 동의해 주세요.');
   if (!isValidDate(req.date) || !isBookableDate(req.date)) throw new BookingError('예약할 수 없는 날짜입니다.');
 
   const couple = Boolean(req.couple) && supportsCouple(plan.id);
-  const person = validPerson(req.person, '예약자');
+  const person: Person = { name: user.name, phone: user.phone, birth: user.birth, sex: user.sex };
   const partner = couple ? validPerson(req.partner, '동반자') : undefined;
   const need = slotsNeeded(plan.id, couple);
   const start = /^\d{2}:\d{2}$/.test(req.time) ? toMin(req.time) : -1;
@@ -65,14 +68,14 @@ export async function createBooking(req: BookingRequest): Promise<Booking> {
     memo: String(req.survey?.memo ?? '').slice(0, 500),
   };
 
-  const store = await getStore();
   // 빠른 실패: 이미 찬 시간이면 바로 안내 (최종 판단은 저장소의 원자적 insert가 한다)
-  const taken = await store.listActive(plan.kind, req.date);
+  const taken = await listActive(plan.kind, req.date);
   if (taken.some(b => overlaps(start, need, toMin(b.time), b.slots))) throw new BookingError(TAKEN_MSG, 409);
 
   for (let attempt = 0; attempt < 3; attempt++) {
     const booking: Booking = {
       code: newCode(),
+      userId: user.id,
       planId: plan.id,
       resource: plan.kind,
       date: req.date,
@@ -87,7 +90,7 @@ export async function createBooking(req: BookingRequest): Promise<Booking> {
       createdAt: new Date().toISOString(),
     };
     try {
-      await store.insert(booking);
+      await insert(booking);
       return booking;
     } catch (e) {
       if (e instanceof SlotConflictError) throw new BookingError(TAKEN_MSG, 409);
@@ -98,26 +101,26 @@ export async function createBooking(req: BookingRequest): Promise<Booking> {
   throw new BookingError('예약번호 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.', 500);
 }
 
-async function findOwned(code: string, phone: string): Promise<Booking> {
-  const b = await (await getStore()).get(String(code).trim().toUpperCase());
-  if (!b || b.person.phone !== normalizePhone(phone)) throw new BookingError('예약 정보를 찾을 수 없습니다. 예약번호와 휴대폰 번호를 확인해 주세요.', 404);
+export async function myBookings(user: User): Promise<Booking[]> {
+  return listByUser(user.id);
+}
+
+// 본인 예약만 조회 (다른 회원의 예약번호로는 찾을 수 없다)
+export async function myBooking(user: User, code: string): Promise<Booking> {
+  const b = await getByCode(String(code).trim().toUpperCase());
+  if (!b || b.userId !== user.id) throw new BookingError('예약 정보를 찾을 수 없습니다.', 404);
   return b;
 }
 
-export async function lookupBooking(code: string, phone: string): Promise<Booking> {
-  return findOwned(code, phone);
-}
-
-export async function cancelBooking(code: string, phone: string): Promise<Booking> {
-  const b = await findOwned(code, phone);
+export async function cancelMyBooking(user: User, code: string): Promise<Booking> {
+  const b = await myBooking(user, code);
   if (b.status === 'cancelled') throw new BookingError('이미 취소된 예약입니다.');
-  if (!canCancel(b.date)) throw new BookingError('검진 2일 전부터는 온라인 취소가 어렵습니다. 대표번호로 문의해 주세요.');
+  if (!canCancel(b.date)) throw new BookingError('검진 2일 전부터는 온라인 취소가 어렵습니다. 상담 전화로 문의해 주세요.');
   const updated: Booking = { ...b, status: 'cancelled', cancelledAt: new Date().toISOString() };
-  await (await getStore()).cancel(updated);
+  await saveCancelled(updated);
   return updated;
 }
 
 export async function listBookings(): Promise<Booking[]> {
-  const list = await (await getStore()).list();
-  return list.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  return listAll();
 }

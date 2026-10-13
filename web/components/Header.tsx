@@ -4,12 +4,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { site } from '@/lib/data';
-import { STATIC_SITE } from '@/lib/env';
 
 // 히어로 위에서는 파란 배경, 스크롤하면 흰 배경으로 전환. back이 있으면 뒤로가기 버튼을 보여준다
 export default function Header({ solid = false, back }: { solid?: boolean; back?: string }) {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(solid);
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  // 화면 표시용 표식 쿠키(cs_li)로만 판단한다. 실제 인증은 서버가 세션 쿠키로 확인
+  useEffect(() => {
+    setLoggedIn(document.cookie.split('; ').some(c => c === 'cs_li=1'));
+  }, []);
 
   useEffect(() => {
     if (solid) return;
@@ -39,7 +44,14 @@ export default function Header({ solid = false, back }: { solid?: boolean; back?
       </div>
       <div className="header-right">
         <a className="tel" href={`tel:${site.phone}`}>{site.phone}</a>
-        {!STATIC_SITE && <Link href="/booking/lookup">예약조회</Link>}
+        {loggedIn ? (
+          <Link href="/my">내 정보</Link>
+        ) : (
+          <>
+            <Link href="/login">로그인</Link>
+            <Link className="join-btn" href="/signup">회원가입</Link>
+          </>
+        )}
       </div>
     </header>
   );

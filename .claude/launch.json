@@ -26,19 +26,6 @@
       "port": 3000
     },
     {
-      "name": "web-static",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": [
-        "-y",
-        "http-server",
-        "web/out",
-        "-p",
-        "8090",
-        "-c-1"
-      ],
-      "port": 8090
-    },
-    {
       "name": "cf-preview",
       "runtimeExecutable": "npx",
       "runtimeArgs": [

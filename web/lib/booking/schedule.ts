@@ -8,8 +8,8 @@ export const CANCEL_DEADLINE_DAYS = 2; // 검진 2일 전까지 변경·취소 �
 // 상품별 장비 점유 슬롯 수 (30분 단위)
 const PLAN_SLOTS: Record<string, number> = { annual: 1, spine: 2, neuro: 4, 'heart-ct': 1, 'lung-ct': 1 };
 
-// 커플 플랜 할인액 (같은 날 연이어 두 명)
-export const COUPLE_DISCOUNT: Record<string, number> = { annual: 240000, spine: 310000, neuro: 420000 };
+// 커플 플랜이 가능한 상품 (할인액은 서버 전용 lib/pricing.ts)
+const COUPLE_PLANS = new Set(['annual', 'spine', 'neuro']);
 
 export const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -21,14 +21,8 @@ export function slotsNeeded(planId: string, couple: boolean): number {
   return (PLAN_SLOTS[planId] ?? 1) * (couple ? 2 : 1);
 }
 
-export function priceFor(planId: string, couple: boolean): number {
-  const p = getPlan(planId);
-  if (!p) return 0;
-  return couple ? p.price * 2 - (COUPLE_DISCOUNT[planId] ?? 0) : p.price;
-}
-
 export function supportsCouple(planId: string): boolean {
-  return planId in COUPLE_DISCOUNT;
+  return COUPLE_PLANS.has(planId);
 }
 
 const parse = (date: string) => {

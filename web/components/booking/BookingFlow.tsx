@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { plans, site, won } from '@/lib/data';
 import {
-  BOOKING_WINDOW_MONTHS, COUPLE_DISCOUNT, HOURS_NOTE, WEEKDAYS, addDays, addMonths, dayOfWeek, firstBookableDate,
-  formatDateKo, formatPhone, getPlan, isBookableDate, kstToday, lastBookableDate, priceFor, supportsCouple,
+  BOOKING_WINDOW_MONTHS, HOURS_NOTE, WEEKDAYS, addDays, addMonths, dayOfWeek, firstBookableDate,
+  formatDateKo, formatPhone, getPlan, isBookableDate, kstToday, lastBookableDate, supportsCouple,
 } from '@/lib/booking/schedule';
 import type { Person, SlotInfo, Survey } from '@/lib/booking/types';
 
@@ -14,14 +14,23 @@ const emptyPerson: Person = { name: '', phone: '', birth: '', sex: 'F' };
 
 type Done = { code: string; date: string; time: string; planId: string; couple: boolean; price: number };
 
-export default function BookingFlow({ initialPlan }: { initialPlan?: string }) {
+export type Member = Person & { email: string };
+
+// 예약자 본인 정보는 로그인한 회원 정보(member)를 그대로 쓴다
+export type BookingPricing = { prices: Record<string, number>; coupleDiscount: Record<string, number> };
+
+export default function BookingFlow({ initialPlan, member, pricing }: { initialPlan?: string; member: Member; pricing: BookingPricing }) {
+  // 요금은 서버가 회원에게만 내려준다 (lib/pricing.ts)
+  const priceFor = (id: string, couple: boolean) => {
+    const p = pricing.prices[id] ?? 0;
+    return couple ? p * 2 - (pricing.coupleDiscount[id] ?? 0) : p;
+  };
   const [step, setStep] = useState(0);
   const [planId, setPlanId] = useState(getPlan(initialPlan ?? '') ? initialPlan! : 'annual');
   const [couple, setCouple] = useState(false);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [slots, setSlots] = useState<SlotInfo[] | null>(null);
-  const [person, setPerson] = useState<Person>(emptyPerson);
   const [partner, setPartner] = useState<Person>({ ...emptyPerson, sex: 'M' });
   const [survey, setSurvey] = useState<Survey>({ metalImplant: false, claustrophobia: false, pregnant: false, memo: '' });
   const [consent, setConsent] = useState({ privacy: false, sensitive: false });
@@ -69,7 +78,7 @@ export default function BookingFlow({ initialPlan }: { initialPlan?: string }) {
   const canNext = [
     Boolean(planId),
     Boolean(date && time),
-    personOk(person) && (!isCouple || personOk(partner)) && consent.privacy && consent.sensitive,
+    (!isCouple || personOk(partner)) && consent.privacy && consent.sensitive,
     true,
   ][step];
 
@@ -81,7 +90,7 @@ export default function BookingFlow({ initialPlan }: { initialPlan?: string }) {
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId, couple: isCouple, date, time, person, partner: isCouple ? partner : undefined, survey, consent }),
+        body: JSON.stringify({ planId, couple: isCouple, date, time, partner: isCouple ? partner : undefined, survey, consent }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -120,7 +129,7 @@ export default function BookingFlow({ initialPlan }: { initialPlan?: string }) {
           <p>촬영 4시간 전부터 금식해 주시고, 금속 액세서리는 착용하지 말고 방문해 주세요. 예약 시간 15분 전까지 도착해 주세요.</p>
         </div>
         <div className="bk-actions">
-          <Link className="btn btn-line" href="/booking/lookup">예약 조회</Link>
+          <Link className="btn btn-line" href="/my">내 예약 보기</Link>
           <Link className="btn btn-primary" href="/">홈으로</Link>
         </div>
       </section>
@@ -145,7 +154,7 @@ export default function BookingFlow({ initialPlan }: { initialPlan?: string }) {
                 <span className="kind">{p.kind}</span>
                 <span className="nm">{p.name}</span>
                 <span className="tm">{p.time}</span>
-                <span className="pr">{won(p.price)}원</span>
+                <span className="pr">{won(pricing.prices[p.id])}원</span>
               </label>
             ))}
           </div>
@@ -155,7 +164,7 @@ export default function BookingFlow({ initialPlan }: { initialPlan?: string }) {
               <span className="box-ck" aria-hidden="true">{couple && '✓'}</span>
               <span>
                 <b>커플 플랜으로 함께 예약</b>
-                <small>같은 날 연이어 두 명 검진 · {won(COUPLE_DISCOUNT[planId])}원 할인</small>
+                <small>같은 날 연이어 두 명 검진 · {won(pricing.coupleDiscount[planId] ?? 0)}원 할인</small>
               </span>
             </label>
           )}
@@ -222,7 +231,13 @@ export default function BookingFlow({ initialPlan }: { initialPlan?: string }) {
       {step === 2 && (
         <section className="sec" style={{ marginTop: 0 }}>
           <h2 className="bk-h">예약자 정보</h2>
-          <PersonFields value={person} onChange={setPerson} />
+          <dl className="bk-summary bk-member">
+            <div><dt>이름</dt><dd>{member.name}</dd></div>
+            <div><dt>휴대폰</dt><dd>{formatPhone(member.phone)}</dd></div>
+            <div><dt>생년월일</dt><dd>{member.birth} · {member.sex === 'F' ? '여성' : '남성'}</dd></div>
+            <div><dt>이메일</dt><dd>{member.email}</dd></div>
+          </dl>
+          <p className="note">회원 정보로 예약됩니다. 정보 변경은 상담 전화로 문의해 주세요.</p>
           {isCouple && (
             <>
               <h2 className="bk-h" style={{ marginTop: 28 }}>동반자 정보</h2>
@@ -258,7 +273,7 @@ export default function BookingFlow({ initialPlan }: { initialPlan?: string }) {
           <dl className="bk-summary">
             <div><dt>검진</dt><dd>{plan.name}{isCouple && ' · 커플 플랜'}<br /><small>{plan.time}</small></dd></div>
             <div><dt>일시</dt><dd>{formatDateKo(date)} {time}</dd></div>
-            <div><dt>예약자</dt><dd>{person.name} · {formatPhone(person.phone)}</dd></div>
+            <div><dt>예약자</dt><dd>{member.name} · {formatPhone(member.phone)}</dd></div>
             {isCouple && <div><dt>동반자</dt><dd>{partner.name} · {formatPhone(partner.phone)}</dd></div>}
             <div><dt>장소</dt><dd>{site.clinic}<br /><small>{site.address}</small></dd></div>
             <div className="total"><dt>결제 예정 금액</dt><dd>{won(priceFor(planId, isCouple))}원</dd></div>
