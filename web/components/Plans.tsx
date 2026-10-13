@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { plans, won, site, type Plan } from '@/lib/data';
 import { Chevron } from './icons';
@@ -67,7 +68,7 @@ export default function Plans() {
             ))}
             <div className="actions">
               <button type="button" className="btn btn-line" onClick={() => setOpen(null)}>닫기</button>
-              <a className="btn btn-primary" href={`/booking?plan=${open.id}`}>{open.name} 예약하기 <Chevron /></a>
+              <Link className="btn btn-primary" href={`/booking?plan=${open.id}`}>{open.name} 예약하기 <Chevron /></Link>
             </div>
           </div>
         </div>

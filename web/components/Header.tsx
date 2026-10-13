@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { site } from '@/lib/data';
+import { STATIC_SITE } from '@/lib/env';
 
 // 히어로 위에서는 파란 배경, 스크롤하면 흰 배경으로 전환. back이 있으면 뒤로가기 버튼을 보여준다
 export default function Header({ solid = false, back }: { solid?: boolean; back?: string }) {
@@ -38,7 +39,7 @@ export default function Header({ solid = false, back }: { solid?: boolean; back?
       </div>
       <div className="header-right">
         <a className="tel" href={`tel:${site.phone}`}>{site.phone}</a>
-        <Link href="/booking/lookup">예약조회</Link>
+        {!STATIC_SITE && <Link href="/booking/lookup">예약조회</Link>}
       </div>
     </header>
   );

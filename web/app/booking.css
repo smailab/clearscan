@@ -84,6 +84,9 @@
 .bk-actions { display: flex; gap: 8px; margin-top: 18px; }
 .bk-actions .btn { flex: 1; }
 
+.bk-static-actions { display: flex; flex-direction: column; gap: 8px; }
+.bk-static-actions .btn { width: 100%; }
+
 /* ---------- 관리자 ---------- */
 .admin { max-width: 1200px; margin: 0 auto; padding: 32px 20px; background: var(--surface); min-height: 100vh; }
 .admin h1 { font-size: 24px; font-weight: 800; margin-bottom: 12px; }

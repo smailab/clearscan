@@ -4,3 +4,5 @@ next-env.d.ts
 *.tsbuildinfo
 data/
 .env*.local
+out/
+.static-stash/
