@@ -1,11 +1,21 @@
-// Cloudflare Workers 정적 사이트 배포 설정 (npm run deploy:cf)
-// 정적 빌드 결과(out/)를 그대로 올린다 — 서버 기능(예약 API, 관리자)은 포함되지 않음
+// Cloudflare Workers 배포 설정 — Next.js 서버(OpenNext) + D1 예약 저장소
+// 배포: npm run deploy:cf   /  DB 테이블 적용: npm run db:migrate
 {
   "name": "clearscan",
+  "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-06",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
-    "directory": "./out",
-    "html_handling": "auto-trailing-slash",
-    "not_found_handling": "404-page"
-  }
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "clearscan",
+      "database_id": "24b4caa2-9b75-4f97-8fad-cf4d488f243e",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": { "enabled": true }
 }

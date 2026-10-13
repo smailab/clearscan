@@ -6,3 +6,6 @@ data/
 .env*.local
 out/
 .static-stash/
+.open-next/
+.wrangler/
+.dev.vars

@@ -4,20 +4,54 @@
     {
       "name": "site",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["-y", "http-server", ".", "-p", "8080", "-c-1"],
+      "runtimeArgs": [
+        "-y",
+        "http-server",
+        ".",
+        "-p",
+        "8080",
+        "-c-1"
+      ],
       "port": 8080
     },
     {
       "name": "web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "web", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "web",
+        "run",
+        "dev"
+      ],
       "port": 3000
     },
     {
       "name": "web-static",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["-y", "http-server", "web/out", "-p", "8090", "-c-1"],
+      "runtimeArgs": [
+        "-y",
+        "http-server",
+        "web/out",
+        "-p",
+        "8090",
+        "-c-1"
+      ],
       "port": 8090
+    },
+    {
+      "name": "cf-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "--prefix",
+        "web",
+        "wrangler",
+        "dev",
+        "--config",
+        "web/wrangler.jsonc",
+        "--port",
+        "8787"
+      ],
+      "port": 8787
     }
   ]
 }
