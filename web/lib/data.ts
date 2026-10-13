@@ -2,7 +2,7 @@ export const site = {
   name: '클리어스캔',
   tagline: '전신 MRI 정밀 검진',
   notice: '신규 오픈 기념 — 첫 검진 예약 시 결과 상담 무료',
-  phone: '02-393-0010',
+  phone: '070-5236-1099', // 클리어스캔 상담 전화 (검진 센터 번호는 centers[].phone)
   clinic: '이로영상의학과의원',
   address: '서울특별시 서대문구 신촌로37길 10, 7층 701호',
   addressDetail: '(북아현동, 아현메디컬)',
