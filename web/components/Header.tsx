@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { site } from '@/lib/data';
 import Logo from './Logo';
+import MenuDrawer from './MenuDrawer';
 
 // 히어로 위에서는 파란 배경, 스크롤하면 흰 배경으로 전환. back이 있으면 뒤로가기 버튼을 보여준다
 export default function Header({ solid = false, back }: { solid?: boolean; back?: string }) {
@@ -52,6 +53,7 @@ export default function Header({ solid = false, back }: { solid?: boolean; back?
             <Link className="join-btn" href="/signup">회원가입</Link>
           </>
         )}
+        <MenuDrawer loggedIn={loggedIn} />
       </div>
     </header>
   );
