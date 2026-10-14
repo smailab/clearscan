@@ -6,6 +6,8 @@ import Plans from '@/components/Plans';
 import OrganGuide from '@/components/OrganGuide';
 import CenterList from '@/components/center/CenterList';
 import HScroll from '@/components/HScroll';
+import PostCards from '@/components/post/PostCards';
+import { listPosts } from '@/lib/posts';
 import { Chevron, IconCalendar, IconPin, IconScan, IconWon } from '@/components/icons';
 import { facts, factsNote, faqs, reviews, reviewsNote, site, steps, won } from '@/lib/data';
 import { currentUser } from '@/lib/auth/members';
@@ -17,7 +19,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const user = await currentUser();
-  const [pricing, products] = await Promise.all([user ? getPricing() : null, listProducts()]);
+  const [pricing, products, posts] = await Promise.all([user ? getPricing() : null, listProducts(), listPosts({ limit: 3 })]);
 
   return (
     <Shell>
@@ -92,12 +94,13 @@ export default async function Home() {
 
       {/* 왜 전신 MRI */}
       <section className="sec" id="why">
-        <div className="sec-head"><h2>왜 전신 MRI인가요?</h2></div>
+        <div className="sec-head"><h2>왜 전신 MRI인가요?</h2>{posts.length > 0 && <Link className="more" href="/posts">더보기 ›</Link>}</div>
         <p className="sec-sub">건강이 걱정될 때, 막연한 불안 대신 확실한 정보로 다음 단계를 결정하세요.</p>
         <div className="facts">
           {facts.map(f => <div className="fact" key={f.label}><b>{f.value}</b><span>{f.label}</span></div>)}
         </div>
         <p className="note">{factsNote}</p>
+        {posts.length > 0 && <div className="why-posts"><PostCards posts={posts} /></div>}
       </section>
 
       {/* 이용 후기 */}

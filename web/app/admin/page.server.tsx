@@ -9,6 +9,8 @@ import { describeDiscount, listCoupons } from '@/lib/coupons';
 import { NewProductBox, ProductRow } from '@/components/admin/ProductEditor';
 import { CouponToggle, IssueCouponBox } from '@/components/admin/CouponParts';
 import { CenterRow, NewCenterBox } from '@/components/admin/CenterEditor';
+import { NewPostBox, PostRow } from '@/components/admin/PostEditor';
+import { listPosts } from '@/lib/posts';
 import { listCenters } from '@/lib/centers';
 import { listUsers } from '@/lib/auth/members';
 import { won } from '@/lib/data';
@@ -40,6 +42,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <a href="/admin?tab=products" className={tab === 'products' ? 'on' : ''}>상품 관리</a>
         <a href="/admin?tab=coupons" className={tab === 'coupons' ? 'on' : ''}>쿠폰</a>
         <a href="/admin?tab=centers" className={tab === 'centers' ? 'on' : ''}>검진 센터</a>
+        <a href="/admin?tab=posts" className={tab === 'posts' ? 'on' : ''}>건강 칼럼</a>
         <a href="/admin?tab=members" className={tab === 'members' ? 'on' : ''}>회원 관리</a>
         {admin.role === 'owner' && <a href="/admin?tab=admins" className={tab === 'admins' ? 'on' : ''}>관리자 계정</a>}
         <a href="/admin?tab=account" className={tab === 'account' ? 'on' : ''}>내 계정</a>
@@ -48,6 +51,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         : tab === 'products' ? <Products owner={admin.role === 'owner'} />
         : tab === 'coupons' ? <Coupons />
         : tab === 'centers' ? <Centers owner={admin.role === 'owner'} />
+        : tab === 'posts' ? <Posts />
         : tab === 'admins' && admin.role === 'owner' ? <Admins me={admin} />
         : tab === 'account' ? <ChangePasswordForm />
         : <Bookings all={all === '1'} />}
@@ -271,6 +275,29 @@ async function Centers({ owner }: { owner: boolean }) {
         </table>
       </div>
       <NewCenterBox products={productOptions} />
+    </>
+  );
+}
+
+async function Posts() {
+  const posts = await listPosts({ includeDrafts: true });
+  return (
+    <>
+      <div className="admin-bar">
+        <p className="admin-stat">글 {posts.length}개 · 공개 {posts.filter(p => p.status === 'published').length}개 — 공개한 글은 메인 &lsquo;왜 전신 MRI인가요?&rsquo;와 /posts에 최신순으로 보입니다.</p>
+      </div>
+      <div className="admin-table">
+        <table>
+          <thead>
+            <tr><th>이미지</th><th>제목</th><th>상태</th><th>공개일</th><th>최근 수정</th><th>관리</th></tr>
+          </thead>
+          <tbody>
+            {posts.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32 }}>아직 글이 없습니다. 아래에서 첫 글을 써 보세요.</td></tr>}
+            {posts.map(p => <PostRow key={p.id} p={p} />)}
+          </tbody>
+        </table>
+      </div>
+      <NewPostBox />
     </>
   );
 }
