@@ -20,9 +20,11 @@ const occupied = (b: Booking): { resource: string; start: number }[] => {
 };
 
 // 날짜별로 이미 찬 슬롯 (장비 → 슬롯 시작 시각들)
-export async function takenSlots(date: string): Promise<Map<string, Set<number>>> {
+// excludeCode: 일정 변경 중인 예약 자신의 슬롯은 빈 것으로 본다
+export async function takenSlots(date: string, excludeCode = ''): Promise<Map<string, Set<number>>> {
   const db = await getDB();
-  const { results } = await db.prepare('SELECT resource, slot_start FROM booking_slots WHERE date = ?').bind(date).all<{ resource: string; slot_start: number }>();
+  const { results } = await db.prepare('SELECT resource, slot_start FROM booking_slots WHERE date = ? AND code != ?')
+    .bind(date, excludeCode).all<{ resource: string; slot_start: number }>();
   const map = new Map<string, Set<number>>();
   for (const r of results) {
     if (!map.has(r.resource)) map.set(r.resource, new Set());
@@ -94,6 +96,24 @@ export async function insertMany(list: Booking[], extra: D1Stmt[] = []): Promise
 }
 
 export const insert = (b: Booking, extra: D1Stmt[] = []) => insertMany([b], extra);
+
+// 일정 변경: 기존 슬롯을 지우고 새 슬롯을 잡는다 (한 트랜잭션 — 새 시간이 겹치면 전부 롤백되어 원래 일정 유지)
+export async function saveRescheduled(b: Booking): Promise<void> {
+  const db = await getDB();
+  try {
+    await db.batch([
+      db.prepare('DELETE FROM booking_slots WHERE code = ?').bind(b.code),
+      ...occupied(b).map(o =>
+        db.prepare('INSERT INTO booking_slots (resource, date, slot_start, code) VALUES (?, ?, ?, ?)').bind(o.resource, b.date, o.start, b.code),
+      ),
+      db.prepare('UPDATE bookings SET date = ?, time = ?, data = ? WHERE code = ?').bind(b.date, b.time, JSON.stringify(b), b.code),
+    ]);
+  } catch (e) {
+    const msg = String((e as Error)?.message ?? e);
+    if (msg.includes('booking_slots')) throw new SlotConflictError(msg);
+    throw e;
+  }
+}
 
 export async function saveCancelled(b: Booking, extra: D1Stmt[] = []): Promise<void> {
   const db = await getDB();

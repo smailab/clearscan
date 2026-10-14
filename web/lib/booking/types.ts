@@ -44,6 +44,8 @@ export type Booking = {
   status: 'confirmed' | 'cancelled';
   createdAt: string;
   cancelledAt?: string;
+  // 관리자가 일정을 바꾼 기록 (최근 것이 마지막)
+  history?: { at: string; by: string; from: { date: string; time: string }; to: { date: string; time: string } }[];
 };
 
 export type BookingRequest = {

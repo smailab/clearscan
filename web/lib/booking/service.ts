@@ -5,9 +5,9 @@ import { CouponError, checkCoupon, redemptionStmt, releaseCouponUse, reserveCoup
 import { listProducts } from '@/lib/products';
 import { priceOf, slotsNeeded, type ProductWithPrice } from '@/lib/products-shared';
 import {
-  CouponUsedError, DuplicateCodeError, SlotConflictError, getByCode, insertMany, listAll, listByUser, listGroup, saveCancelled, takenSlots,
+  CouponUsedError, DuplicateCodeError, SlotConflictError, getByCode, insertMany, listAll, listByUser, listGroup, saveCancelled, saveRescheduled, takenSlots,
 } from './store';
-import { canCancel, candidateStarts, isBookableDate, isValidDate, kstToday, normalizePhone, overlaps, toHHMM, toMin } from './schedule';
+import { addMonths, canCancel, candidateStarts, isValidDate, isBookableDate, kstToday, normalizePhone, overlaps, toHHMM, toMin } from './schedule';
 import { MAX_ITEMS, buildSegments, orderItems, segmentSlotStarts, totalSlots } from './visit';
 import type { Booking, BookingRequest, Person, SlotInfo } from './types';
 
@@ -245,6 +245,70 @@ export async function cancelMyBooking(user: User, code: string): Promise<Booking
     restore = others.length === 0;
   }
   await saveCancelled(updated, restore ? await restoreStmts(b.groupCode ?? b.code, b.couponCode!) : []);
+  return updated;
+}
+
+// ---------- 관리자 일정 변경 ----------
+
+// 예약이 점유하는 검사 구간 (시작 시각 기준 상대 위치). 예전 묶음 예약은 검사들이 함께 움직인다
+function partsOf(b: Booking): { resource: string; offset: number; slots: number }[] {
+  if (b.items?.length) {
+    const base = toMin(b.time);
+    return b.items.map(it => ({ resource: it.resource, offset: toMin(it.start) - base, slots: it.slots }));
+  }
+  return [{ resource: b.resource, offset: 0, slots: b.slots }];
+}
+
+// 관리자는 오늘부터 12개월 뒤까지 옮길 수 있다 (운영 시간 안에서만)
+const adminDateOk = (date: string) => isValidDate(date) && date >= kstToday() && date <= addMonths(kstToday(), 12);
+
+async function confirmedBooking(code: string): Promise<Booking> {
+  const b = await getByCode(String(code ?? '').trim().toUpperCase());
+  if (!b) throw new BookingError('예약을 찾을 수 없습니다.', 404);
+  if (b.status !== 'confirmed') throw new BookingError('취소된 예약은 일정을 바꿀 수 없습니다.');
+  return b;
+}
+
+// 이 예약을 옮길 수 있는 시간 (자기 자신이 쓰던 슬롯은 빈 것으로 본다)
+export async function rescheduleOptions(code: string, date: string): Promise<SlotInfo[]> {
+  const b = await confirmedBooking(code);
+  if (!adminDateOk(date)) return [];
+  const taken = await takenSlots(date, b.code);
+  const parts = partsOf(b);
+  return candidateStarts(date, b.slots).map(t => ({
+    time: toHHMM(t),
+    available: parts.every(p => segmentSlotStarts({ start: t + p.offset, slots: p.slots }).every(s => !taken.get(p.resource)?.has(s))),
+  }));
+}
+
+export async function rescheduleBooking(code: string, date: string, time: string, adminName: string): Promise<Booking> {
+  const b = await confirmedBooking(code);
+  if (!adminDateOk(date)) throw new BookingError('오늘부터 12개월 안의 날짜로만 바꿀 수 있습니다.');
+  const start = /^\d{2}:\d{2}$/.test(String(time)) ? toMin(time) : -1;
+  if (!candidateStarts(date, b.slots).includes(start)) throw new BookingError('운영 시간 안의 시간을 선택해 주세요.');
+  if (b.date === date && b.time === toHHMM(start)) throw new BookingError('지금 일정과 같습니다.');
+
+  // 함께 예약한 다른 검사와 같은 날 시간이 겹치면 안 된다 (한 사람이 동시에 받을 수 없다)
+  if (b.groupCode) {
+    const clash = (await listGroup(b.groupCode)).find(x =>
+      x.code !== b.code && x.status === 'confirmed' && x.date === date && overlaps(start, b.slots, toMin(x.time), x.slots));
+    if (clash) throw new BookingError(`함께 예약한 ${clash.planName ?? clash.planId}(${clash.code}) ${clash.time} 일정과 겹칩니다.`);
+  }
+
+  const delta = start - toMin(b.time);
+  const updated: Booking = {
+    ...b,
+    date,
+    time: toHHMM(start),
+    ...(b.items?.length ? { items: b.items.map(it => ({ ...it, start: toHHMM(toMin(it.start) + delta) })) } : {}),
+    history: [...(b.history ?? []), { at: new Date().toISOString(), by: adminName, from: { date: b.date, time: b.time }, to: { date, time: toHHMM(start) } }],
+  };
+  try {
+    await saveRescheduled(updated);
+  } catch (e) {
+    if (e instanceof SlotConflictError) throw new BookingError('그 시간에는 이미 다른 예약이 있습니다. 다른 시간을 선택해 주세요.', 409);
+    throw e;
+  }
   return updated;
 }
 

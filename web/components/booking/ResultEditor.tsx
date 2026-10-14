@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type Status = 'normal' | 'followup' | 'detail';
 export type ResultInitial = { status: Status; summary: string; findings: string; recommendation: string; published: boolean } | null;
@@ -17,12 +17,16 @@ type Props = {
   initial: ResultInitial;
   meta?: string;                   // 마지막 수정자 · 시각
   summaryLabel: string;            // 예: "2026년 10월 21일 10:00 · 연간 MRI · 홍길동"
+  reschedule?: { date: string; time: string; history: string[] }; // 확정 예약이면 일정 변경 가능
 };
 
-// 관리자 예약 표의 한 줄 + 그 아래 표 전체 폭으로 펼쳐지는 검사 결과 입력 박스
-export default function BookingResultRow({ code, colSpan, cells, rowClassName, editable, initial, meta, summaryLabel }: Props) {
+// 관리자 예약 표의 한 줄 + 그 아래 표 전체 폭으로 펼쳐지는 검사 결과 입력 / 일정 변경 박스
+export default function BookingResultRow({ code, colSpan, cells, rowClassName, editable, initial, meta, summaryLabel, reschedule }: Props) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [panel, setPanel] = useState<'result' | 'time' | null>(null);
+  const open = panel === 'result';
+  const setOpen = (v: boolean | ((o: boolean) => boolean)) =>
+    setPanel(p => ((typeof v === 'function' ? v(p === 'result') : v) ? 'result' : null));
   const [f, setF] = useState(initial ?? { status: 'normal' as Status, summary: '', findings: '', recommendation: '', published: false });
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
@@ -40,7 +44,7 @@ export default function BookingResultRow({ code, colSpan, cells, rowClassName, e
 
   return (
     <>
-      <tr className={`${rowClassName ?? ''}${open ? ' re-open' : ''}`}>
+      <tr className={`${rowClassName ?? ''}${panel ? ' re-open' : ''}`}>
         {cells}
         <td>
           {editable ? (
@@ -51,8 +55,20 @@ export default function BookingResultRow({ code, colSpan, cells, rowClassName, e
               {meta && <small className="admin-msg">{meta}</small>}
             </>
           ) : <small>-</small>}
+          {reschedule && (
+            <button type="button" className="re-toggle rs-toggle" aria-expanded={panel === 'time'} onClick={() => setPanel(p => (p === 'time' ? null : 'time'))}>
+              시간 변경 {panel === 'time' ? '▴' : '▾'}
+            </button>
+          )}
         </td>
       </tr>
+      {reschedule && panel === 'time' && (
+        <tr className="re-row">
+          <td colSpan={colSpan}>
+            <RescheduleBox code={code} summaryLabel={summaryLabel} {...reschedule} onClose={() => setPanel(null)} />
+          </td>
+        </tr>
+      )}
       {editable && open && (
         <tr className="re-row">
           <td colSpan={colSpan}>
@@ -99,5 +115,86 @@ export default function BookingResultRow({ code, colSpan, cells, rowClassName, e
         </tr>
       )}
     </>
+  );
+}
+
+type Slot = { time: string; available: boolean };
+
+// 관리자 일정 변경: 날짜를 고르면 옮길 수 있는 시간이 나온다 (이 예약이 쓰던 시간은 빈 것으로 표시)
+function RescheduleBox({ code, summaryLabel, date: curDate, time: curTime, history, onClose }: {
+  code: string; summaryLabel: string; date: string; time: string; history: string[]; onClose: () => void;
+}) {
+  const router = useRouter();
+  const [date, setDate] = useState(curDate);
+  const [time, setTime] = useState('');
+  const [slots, setSlots] = useState<Slot[] | null>(null);
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setTime('');
+    setSlots(null);
+    if (!date) return;
+    let alive = true;
+    fetch(`/api/admin/bookings/reschedule?code=${encodeURIComponent(code)}&date=${date}`)
+      .then(r => r.json())
+      .then(d => { if (alive) setSlots(d.slots ?? []); })
+      .catch(() => { if (alive) setSlots([]); });
+    return () => { alive = false; };
+  }, [code, date]);
+
+  async function save() {
+    setBusy(true);
+    setMsg('');
+    const res = await fetch('/api/admin/bookings/reschedule', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, date, time }) });
+    const json = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) { setMsg(json.error ?? '변경하지 못했습니다.'); return; }
+    onClose();
+    router.refresh();
+  }
+
+  return (
+    <div className="re-box">
+      <div className="re-box-head">
+        <b>예약 시간 변경</b>
+        <span>{summaryLabel} · <code>{code}</code></span>
+      </div>
+      <div className="rs-grid">
+        <label>날짜
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+        </label>
+        <div className="rs-times-wrap">
+          <span className="rs-label">시간 <em>(현재 {curDate} {curTime})</em></span>
+          {!date ? <p className="admin-msg">날짜를 선택하세요.</p>
+            : slots === null ? <p className="admin-msg">불러오는 중…</p>
+            : slots.length === 0 ? <p className="admin-msg">운영하지 않는 날이거나 바꿀 수 없는 날짜입니다.</p>
+            : (
+              <div className="rs-times">
+                {slots.map(s => {
+                  const current = date === curDate && s.time === curTime;
+                  return (
+                    <button key={s.time} type="button" disabled={!s.available || current} className={`${time === s.time ? 'on' : ''}${current ? ' cur' : ''}`}
+                      title={current ? '지금 예약된 시간' : !s.available ? '다른 예약이 있음' : undefined} onClick={() => setTime(s.time)}>
+                      {s.time}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+        </div>
+      </div>
+      {history.length > 0 && (
+        <ul className="rs-history">{history.map(h => <li key={h}>{h}</li>)}</ul>
+      )}
+      <div className="re-foot">
+        <span className="admin-msg">{time ? `${curDate} ${curTime} → ${date} ${time} 로 변경합니다. 회원 내 페이지에도 바로 반영됩니다.` : '바꿀 시간을 선택하세요.'}</span>
+        <div className="re-actions">
+          {msg && <span className="rs-err">{msg}</span>}
+          <button type="button" className="btn btn-line" onClick={onClose}>닫기</button>
+          <button type="button" className="btn btn-primary" disabled={busy || !time} onClick={save}>{busy ? '변경 중…' : '시간 변경'}</button>
+        </div>
+      </div>
+    </div>
   );
 }

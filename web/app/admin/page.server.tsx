@@ -93,8 +93,14 @@ async function Bookings({ all }: { all: boolean }) {
                   initial={r ? { status: r.status, summary: r.summary, findings: r.findings, recommendation: r.recommendation, published: r.published } : null}
                   meta={r?.updatedBy ? `${r.updatedBy} · ${new Date(r.updatedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}` : undefined}
                   summaryLabel={`${formatDateKo(b.date)} ${b.time} · ${b.planName ?? names.get(b.planId) ?? b.planId} · ${b.person.name}`}
+                  reschedule={b.status === 'confirmed' ? {
+                    date: b.date,
+                    time: b.time,
+                    history: (b.history ?? []).map(h =>
+                      `${new Date(h.at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })} · ${h.by} · ${h.from.date} ${h.from.time} → ${h.to.date} ${h.to.time}`),
+                  } : undefined}
                   cells={<>
-                      <td>{formatDateKo(b.date)}<br /><b>{b.time}</b><br /><code>{b.code}</code></td>
+                      <td>{formatDateKo(b.date)}<br /><b>{b.time}</b><br /><code>{b.code}</code>{b.history?.length ? <><br /><span className="grp">일정 변경됨</span></> : null}</td>
                       <td>
                         {b.planName ?? names.get(b.planId) ?? b.planId}{b.couple && <><br /><small>커플</small></>}
                         {b.items && b.items.length > 1 && <><br /><small>{b.items.map(it => `${it.start} ${it.planName}`).join(' → ')}</small></>}
