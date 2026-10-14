@@ -92,6 +92,34 @@ function validate(input: ProductInput): ProductInput {
   };
 }
 
+// 상품 삭제 — 예정된 예약이 있으면 막는다. 지난 예약에는 상품명을 남기고, 이 상품 전용 쿠폰은 사용 중지한다.
+export async function deleteProduct(idRaw: string, today: string): Promise<{ name: string; couponsDisabled: number }> {
+  const id = String(idRaw ?? '').trim();
+  const db = await getDB();
+  const p = await db.prepare('SELECT name FROM products WHERE id = ?').bind(id).first<{ name: string }>();
+  if (!p) throw new ProductError('상품을 찾을 수 없습니다.', 404);
+
+  const upcoming = await db.prepare(
+    `SELECT COUNT(*) AS n FROM bookings
+     WHERE status = 'confirmed' AND date >= ? AND json_extract(data, '$.planId') = ?`,
+  ).bind(today, id).first<{ n: number }>();
+  if (upcoming?.n) {
+    throw new ProductError(`예정된 예약 ${upcoming.n}건이 있어 삭제할 수 없습니다. 예약을 정리하거나 '판매 중지'로 숨겨 주세요.`, 409);
+  }
+  const coupons = await db.prepare('SELECT COUNT(*) AS n FROM coupons WHERE product_id = ? AND active = 1').bind(id).first<{ n: number }>();
+
+  await db.batch([
+    // 상품명이 저장되지 않은 예전 예약에도 이름을 남긴다 (삭제 후에도 이력 표시)
+    db.prepare(
+      `UPDATE bookings SET data = json_set(data, '$.planName', ?)
+       WHERE json_extract(data, '$.planId') = ? AND json_extract(data, '$.planName') IS NULL`,
+    ).bind(p.name, id),
+    db.prepare('UPDATE coupons SET active = 0 WHERE product_id = ?').bind(id),
+    db.prepare('DELETE FROM products WHERE id = ?').bind(id),
+  ]);
+  return { name: p.name, couponsDisabled: coupons?.n ?? 0 };
+}
+
 export async function saveProduct(raw: ProductInput, mode: 'create' | 'update', adminName: string): Promise<void> {
   const p = validate(raw);
   const db = await getDB();

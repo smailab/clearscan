@@ -223,3 +223,5 @@
 .my-coupons .nm { font-size: 14px; font-weight: 600; }
 .my-coupons .meta { font-size: 12px; color: var(--text-2); }
 .my-coupons code { position: absolute; right: 14px; top: 12px; font-size: 12px; color: var(--text-3); }
+
+.pe-err { color: #d93036 !important; max-width: 220px; }

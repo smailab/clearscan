@@ -42,7 +42,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <a href="/admin?tab=account" className={tab === 'account' ? 'on' : ''}>내 계정</a>
       </nav>
       {tab === 'members' ? <Members q={q} />
-        : tab === 'products' ? <Products />
+        : tab === 'products' ? <Products owner={admin.role === 'owner'} />
         : tab === 'coupons' ? <Coupons />
         : tab === 'admins' && admin.role === 'owner' ? <Admins me={admin} />
         : tab === 'account' ? <ChangePasswordForm />
@@ -174,12 +174,12 @@ async function Admins({ me }: { me: Admin }) {
   );
 }
 
-async function Products() {
+async function Products({ owner }: { owner: boolean }) {
   const products = await listProducts({ includeInactive: true });
   return (
     <>
       <div className="admin-bar">
-        <p className="admin-stat">상품 {products.length}개 · 판매 중 {products.filter(p => p.active).length}개 — 수정하면 사이트·예약에 바로 반영됩니다. 예약이 있을 수 있어 삭제 대신 판매 중지로 숨깁니다.</p>
+        <p className="admin-stat">상품 {products.length}개 · 판매 중 {products.filter(p => p.active).length}개 — 수정하면 사이트·예약에 바로 반영됩니다. 잠시 숨기려면 판매 중지를, 완전히 없애려면 삭제(대표 관리자)를 쓰세요. 예정된 예약이 있는 상품은 삭제할 수 없습니다.</p>
       </div>
       <div className="admin-table">
         <table>
@@ -187,7 +187,7 @@ async function Products() {
             <tr><th>순서</th><th>이미지</th><th>상품</th><th>가격</th><th>커플 할인</th><th>점유 시간</th><th>상태</th><th>관리</th></tr>
           </thead>
           <tbody>
-            {products.map(p => <ProductRow key={p.id} p={p} />)}
+            {products.map(p => <ProductRow key={p.id} p={p} canDelete={owner} />)}
           </tbody>
         </table>
       </div>

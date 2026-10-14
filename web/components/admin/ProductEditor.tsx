@@ -135,8 +135,30 @@ function ProductForm({ initial, mode, onDone }: { initial?: ProductWithPrice; mo
 }
 
 // 상품 목록의 한 줄 + 펼쳐지는 편집 박스
-export function ProductRow({ p, meta }: { p: ProductWithPrice; meta?: string }) {
+export function ProductRow({ p, meta, canDelete = false }: { p: ProductWithPrice; meta?: string; canDelete?: boolean }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function remove() {
+    const ok = confirm(`'${p.name}' 상품을 삭제할까요?
+
+· 되돌릴 수 없습니다.
+· 예정된 예약이 있으면 삭제되지 않습니다.
+· 지난 예약 기록에는 상품명이 그대로 남습니다.
+· 이 상품 전용 쿠폰은 사용 중지됩니다.
+
+잠시 숨기려면 삭제 대신 '판매 중지'를 쓰세요.`);
+    if (!ok) return;
+    setBusy(true);
+    setErr('');
+    const res = await fetch('/api/admin/products/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: p.id }) });
+    const json = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) { setErr(json.error ?? '삭제하지 못했습니다.'); return; }
+    router.refresh();
+  }
   return (
     <>
       <tr className={`${p.active ? '' : 'cancelled'}${open ? ' re-open' : ''}`}>
@@ -150,7 +172,13 @@ export function ProductRow({ p, meta }: { p: ProductWithPrice; meta?: string }) 
         <td>{p.coupleDiscount != null ? `${won(p.coupleDiscount)}원` : '-'}</td>
         <td>{p.slots * 30}분</td>
         <td>{p.active ? '판매 중' : '중지'}{meta && <small className="admin-msg">{meta}</small>}</td>
-        <td><button type="button" className="re-toggle" aria-expanded={open} onClick={() => setOpen(o => !o)}>수정 {open ? '▴' : '▾'}</button></td>
+        <td>
+          <div className="admin-actions">
+            <button type="button" className="re-toggle" aria-expanded={open} onClick={() => setOpen(o => !o)}>수정 {open ? '▴' : '▾'}</button>
+            {canDelete && <button type="button" className="danger" disabled={busy} onClick={remove}>{busy ? '삭제 중…' : '삭제'}</button>}
+          </div>
+          {err && <small className="admin-msg pe-err">{err}</small>}
+        </td>
       </tr>
       {open && (
         <tr className="re-row"><td colSpan={8}><ProductForm initial={p} mode="update" onDone={() => setOpen(false)} /></td></tr>
