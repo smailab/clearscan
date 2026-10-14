@@ -7,7 +7,9 @@ import { CancelButton } from '@/components/auth/MyParts';
 import { Chevron } from '@/components/icons';
 import { currentUser } from '@/lib/auth/members';
 import { RESULT_STATUS, resultsByUser } from '@/lib/booking/results';
-import { canCancel, formatDateKo, formatPhone, getPlan, kstToday } from '@/lib/booking/schedule';
+import { canCancel, formatDateKo, formatPhone, kstToday } from '@/lib/booking/schedule';
+import { productNames } from '@/lib/products';
+import { describeDiscount, myCoupons } from '@/lib/coupons';
 import { myBookings } from '@/lib/booking/service';
 import { site, won } from '@/lib/data';
 import type { Booking } from '@/lib/booking/types';
@@ -19,7 +21,8 @@ export default async function MyPage() {
   const user = await currentUser();
   if (!user) redirect('/login?next=/my');
 
-  const [bookings, results] = await Promise.all([myBookings(user), resultsByUser(user.id)]);
+  const [bookings, results, names, coupons] = await Promise.all([myBookings(user), resultsByUser(user.id), productNames(), myCoupons(user.id)]);
+  const nameOf = (b: Booking) => b.planName ?? names.get(b.planId) ?? b.planId;
   const today = kstToday();
   const upcoming = bookings.filter(b => b.status === 'confirmed' && b.date >= today).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   const past = bookings.filter(b => !upcoming.includes(b));
@@ -57,7 +60,7 @@ export default async function MyPage() {
                   <Link href={`/my/results/${r.bookingCode}`} className="my-row">
                     <span className={`my-badge ${s.tone}`}>{s.label}</span>
                     <span className="txt">
-                      <b>{b ? getPlan(b.planId)?.name : '검진'}</b>
+                      <b>{b ? nameOf(b) : '검진'}</b>
                       <small>{b ? formatDateKo(b.date) : ''} · {r.summary}</small>
                     </span>
                     <Chevron className="chev" />
@@ -69,13 +72,29 @@ export default async function MyPage() {
         )}
       </section>
 
+      {coupons.length > 0 && (
+        <section className="sec" id="coupons">
+          <div className="sec-head"><h2>내 쿠폰</h2><Link className="more" href="/booking">예약에 쓰기 ›</Link></div>
+          <ul className="my-coupons">
+            {coupons.map(c => (
+              <li key={c.code}>
+                <b>{describeDiscount(c)}</b>
+                <span className="nm">{c.name}</span>
+                <span className="meta">{c.productId ? names.get(c.productId) ?? '지정 상품' : '전체 상품'} · {c.validUntil}까지</span>
+                <code>{c.code}</code>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="sec" id="bookings">
         <div className="sec-head"><h2>예약 내역</h2><Link className="more" href="/booking">새 예약 ›</Link></div>
         {bookings.length === 0 && <p className="bk-empty">예약 내역이 없어요. <Link href="/booking" style={{ color: 'var(--primary)', fontWeight: 600 }}>검진 예약하기</Link></p>}
         {upcoming.length > 0 && <h3 className="my-sub">예정된 검진</h3>}
-        <ul className="my-list">{upcoming.map(b => <BookingItem key={b.code} b={b} today={today} hasResult={resultCodes.has(b.code)} />)}</ul>
+        <ul className="my-list">{upcoming.map(b => <BookingItem key={b.code} b={b} name={nameOf(b)} today={today} hasResult={resultCodes.has(b.code)} />)}</ul>
         {past.length > 0 && <h3 className="my-sub">지난 예약 · 취소</h3>}
-        <ul className="my-list">{past.map(b => <BookingItem key={b.code} b={b} today={today} hasResult={resultCodes.has(b.code)} />)}</ul>
+        <ul className="my-list">{past.map(b => <BookingItem key={b.code} b={b} name={nameOf(b)} today={today} hasResult={resultCodes.has(b.code)} />)}</ul>
       </section>
 
       <section className="sec">
@@ -86,8 +105,7 @@ export default async function MyPage() {
   );
 }
 
-function BookingItem({ b, today, hasResult }: { b: Booking; today: string; hasResult: boolean }) {
-  const plan = getPlan(b.planId);
+function BookingItem({ b, name, today, hasResult }: { b: Booking; name: string; today: string; hasResult: boolean }) {
   const cancelled = b.status === 'cancelled';
   const state = cancelled ? { label: '취소됨', cls: 'off' } : b.date >= today ? { label: '예약 확정', cls: 'ok' } : { label: '검진 완료', cls: 'done' };
   return (
@@ -96,9 +114,9 @@ function BookingItem({ b, today, hasResult }: { b: Booking; today: string; hasRe
         <span className={`my-state ${state.cls}`}>{state.label}</span>
         <span className="code">{b.code}</span>
       </div>
-      <p className="nm">{plan?.name}{b.couple && ' · 커플 플랜'}</p>
+      <p className="nm">{name}{b.couple && ' · 커플 플랜'}</p>
       <p className="when">{formatDateKo(b.date)} {b.time}</p>
-      <p className="meta">{won(b.price)}원 · 현장 결제{b.partner && ` · 동반자 ${b.partner.name}`}</p>
+      <p className="meta">{won(b.price)}원 · 현장 결제{b.discount ? ` · 쿠폰 ${won(b.discount)}원 할인` : ''}{b.partner && ` · 동반자 ${b.partner.name}`}</p>
       <div className="actions">
         {hasResult && <Link href={`/my/results/${b.code}`} className="my-link">검사 결과 보기 ›</Link>}
         {!cancelled && b.date >= today && (canCancel(b.date) ? <CancelButton code={b.code} /> : <span className="note">검진 2일 전부터는 전화로 변경·취소해 주세요.</span>)}

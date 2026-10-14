@@ -2,31 +2,37 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { plans, site, won } from '@/lib/data';
+import { site, won } from '@/lib/data';
+import type { Product } from '@/lib/products-shared';
 import {
   BOOKING_WINDOW_MONTHS, HOURS_NOTE, WEEKDAYS, addDays, addMonths, dayOfWeek, firstBookableDate,
-  formatDateKo, formatPhone, getPlan, isBookableDate, kstToday, lastBookableDate, supportsCouple,
+  formatDateKo, formatPhone, isBookableDate, kstToday, lastBookableDate,
 } from '@/lib/booking/schedule';
 import type { Person, SlotInfo, Survey } from '@/lib/booking/types';
 
 const STEPS = ['상품', '일정', '정보', '확인'];
 const emptyPerson: Person = { name: '', phone: '', birth: '', sex: 'F' };
 
-type Done = { code: string; date: string; time: string; planId: string; couple: boolean; price: number };
+type Done = { code: string; date: string; time: string; planId: string; couple: boolean; price: number; discount?: number };
+type AppliedCoupon = { code: string; name: string; discount: number; price: number };
 
 export type Member = Person & { email: string };
 
 // 예약자 본인 정보는 로그인한 회원 정보(member)를 그대로 쓴다
 export type BookingPricing = { prices: Record<string, number>; coupleDiscount: Record<string, number> };
 
-export default function BookingFlow({ initialPlan, member, pricing }: { initialPlan?: string; member: Member; pricing: BookingPricing }) {
+export type MyCoupon = { code: string; name: string };
+
+export default function BookingFlow({ initialPlan, member, pricing, products, myCoupons = [] }: { initialPlan?: string; member: Member; pricing: BookingPricing; products: Product[]; myCoupons?: MyCoupon[] }) {
+  const getPlan = (id: string) => products.find(p => p.id === id);
+  const supportsCouple = (id: string) => Boolean(getPlan(id)?.couple);
   // 요금은 서버가 회원에게만 내려준다 (lib/pricing.ts)
   const priceFor = (id: string, couple: boolean) => {
     const p = pricing.prices[id] ?? 0;
     return couple ? p * 2 - (pricing.coupleDiscount[id] ?? 0) : p;
   };
   const [step, setStep] = useState(0);
-  const [planId, setPlanId] = useState(getPlan(initialPlan ?? '') ? initialPlan! : 'annual');
+  const [planId, setPlanId] = useState(getPlan(initialPlan ?? '') ? initialPlan! : (products[0]?.id ?? ''));
   const [couple, setCouple] = useState(false);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -37,6 +43,9 @@ export default function BookingFlow({ initialPlan, member, pricing }: { initialP
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<Done | null>(null);
+  const [couponInput, setCouponInput] = useState('');
+  const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
+  const [couponMsg, setCouponMsg] = useState('');
 
   const isCouple = couple && supportsCouple(planId);
   const plan = getPlan(planId)!;
@@ -55,7 +64,22 @@ export default function BookingFlow({ initialPlan, member, pricing }: { initialP
     return cells;
   }, [month]);
 
-  useEffect(() => { if (!supportsCouple(planId)) setCouple(false); }, [planId]);
+  useEffect(() => { if (!supportsCouple(planId)) setCouple(false); }, [planId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 상품·커플 여부가 바뀌면 적용한 쿠폰은 다시 확인해야 한다
+  useEffect(() => { setCoupon(null); setCouponMsg(''); }, [planId, isCouple]);
+
+  async function applyCoupon() {
+    setCouponMsg('');
+    try {
+      const res = await fetch('/api/coupons/check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: couponInput, planId, couple: isCouple }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setCoupon(null); setCouponMsg(data.error ?? '쿠폰을 적용하지 못했습니다.'); return; }
+      setCoupon(data);
+    } catch {
+      setCouponMsg('네트워크 오류가 발생했습니다.');
+    }
+  }
 
   // 상품·커플 여부·날짜가 바뀌면 시간 다시 조회
   useEffect(() => {
@@ -90,7 +114,7 @@ export default function BookingFlow({ initialPlan, member, pricing }: { initialP
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId, couple: isCouple, date, time, partner: isCouple ? partner : undefined, survey, consent }),
+        body: JSON.stringify({ planId, couple: isCouple, date, time, partner: isCouple ? partner : undefined, survey, consent, couponCode: coupon?.code }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -122,7 +146,7 @@ export default function BookingFlow({ initialPlan, member, pricing }: { initialP
           <div><dt>검진</dt><dd>{p.name}{done.couple && ' · 커플 플랜'}</dd></div>
           <div><dt>일시</dt><dd>{formatDateKo(done.date)} {done.time}</dd></div>
           <div><dt>장소</dt><dd>{site.clinic}<br />{site.address}</dd></div>
-          <div><dt>결제 예정</dt><dd>{won(done.price)}원 <small>(현장 결제)</small></dd></div>
+          <div><dt>결제 예정</dt><dd>{won(done.price)}원 <small>(현장 결제{done.discount ? ` · 쿠폰 ${won(done.discount)}원 할인` : ''})</small></dd></div>
         </dl>
         <div className="box">
           <p className="title">검진 전 안내</p>
@@ -148,7 +172,7 @@ export default function BookingFlow({ initialPlan, member, pricing }: { initialP
         <section className="sec" style={{ marginTop: 0 }}>
           <h2 className="bk-h">어떤 검진을 받으시겠어요?</h2>
           <div className="bk-plans">
-            {plans.map(p => (
+            {products.map(p => (
               <label key={p.id} className={`bk-plan${planId === p.id ? ' on' : ''}`}>
                 <input type="radio" name="plan" checked={planId === p.id} onChange={() => setPlanId(p.id)} />
                 <span className="kind">{p.kind}</span>
@@ -276,8 +300,29 @@ export default function BookingFlow({ initialPlan, member, pricing }: { initialP
             <div><dt>예약자</dt><dd>{member.name} · {formatPhone(member.phone)}</dd></div>
             {isCouple && <div><dt>동반자</dt><dd>{partner.name} · {formatPhone(partner.phone)}</dd></div>}
             <div><dt>장소</dt><dd>{site.clinic}<br /><small>{site.address}</small></dd></div>
-            <div className="total"><dt>결제 예정 금액</dt><dd>{won(priceFor(planId, isCouple))}원</dd></div>
+            {coupon && <div><dt>쿠폰 할인</dt><dd className="bk-discount">−{won(coupon.discount)}원 <small>({coupon.name})</small></dd></div>}
+            <div className="total"><dt>결제 예정 금액</dt><dd>{coupon && <s className="bk-list">{won(priceFor(planId, isCouple))}원</s>}{won(coupon ? coupon.price : priceFor(planId, isCouple))}원</dd></div>
           </dl>
+          <div className="bk-coupon">
+            <label htmlFor="coupon">쿠폰</label>
+            <div className="bk-coupon-row">
+              <input id="coupon" value={couponInput} placeholder="쿠폰 코드 입력" autoCapitalize="characters"
+                onChange={e => { setCouponInput(e.target.value.toUpperCase()); if (coupon) setCoupon(null); setCouponMsg(''); }} />
+              {coupon
+                ? <button type="button" className="btn btn-line" onClick={() => { setCoupon(null); setCouponInput(''); }}>취소</button>
+                : <button type="button" className="btn btn-line" disabled={!couponInput.trim()} onClick={applyCoupon}>적용</button>}
+            </div>
+            {coupon && <p className="bk-coupon-ok">✓ {coupon.name} — {won(coupon.discount)}원 할인이 적용됐어요</p>}
+            {couponMsg && <p className="bk-error">{couponMsg}</p>}
+            {myCoupons.length > 0 && !coupon && (
+              <div className="bk-my-coupons">
+                <span>보유 쿠폰</span>
+                {myCoupons.map(c => (
+                  <button key={c.code} type="button" onClick={() => setCouponInput(c.code)}>{c.name}</button>
+                ))}
+              </div>
+            )}
+          </div>
           <p className="note">결제는 검진 당일 현장에서 진행됩니다. 검진 2일 전까지 온라인으로 무료 취소할 수 있습니다.</p>
         </section>
       )}

@@ -9,13 +9,14 @@ import { Chevron, IconCalendar, IconPin, IconScan, IconWon } from '@/components/
 import { facts, factsNote, faqs, reviews, reviewsNote, site, steps, won } from '@/lib/data';
 import { currentUser } from '@/lib/auth/members';
 import { getPricing } from '@/lib/pricing';
+import { listProducts, toPublic } from '@/lib/products';
 
 // 요금은 회원에게만 보여주므로 요청마다 로그인 여부를 확인한다
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const user = await currentUser();
-  const pricing = user ? getPricing() : null;
+  const [pricing, products] = await Promise.all([user ? getPricing() : null, listProducts()]);
 
   return (
     <Shell>
@@ -72,7 +73,7 @@ export default async function Home() {
 
       {/* 검진 상품 */}
       <section className="sec" id="plans">
-        <Plans prices={pricing?.prices ?? null} />
+        <Plans products={products.map(toPublic)} prices={pricing?.prices ?? null} />
       </section>
 
       {/* 커플 플랜 */}
@@ -83,7 +84,7 @@ export default async function Home() {
           <ul>
             {pricing
               ? pricing.coupleOffers.map(c => <li key={c.name}><b>{c.save} 할인</b>{c.name}</li>)
-              : ['연간 MRI', '척추 포함 MRI', '척추 포함 MRI + CT', '근골격·신경 정밀'].map(n => <li key={n}><b>🔒 회원 전용</b>{n}</li>)}
+              : products.filter(p => p.couple).map(p => <li key={p.id}><b>🔒 회원 전용</b>{p.name}</li>)}
           </ul>
         </div>
       </section>

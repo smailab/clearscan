@@ -26,66 +26,6 @@ export const steps = [
   { n: 4, tag: '플랜', title: '맞춤 리포트 & 1:1 상담', body: '10일 이내에 이해하기 쉬운 리포트를 앱으로 받고, 담당 의료진과 결과를 상담하세요.', image: '/images/app-report.png' },
 ];
 
-export type PlanGroup = { label: string; items: string[]; excluded?: boolean };
-export type Plan = {
-  id: string;
-  kind: 'MRI' | 'CT';
-  name: string;
-  time: string;
-  desc: string;
-  featured?: boolean;
-  image: string;
-  groups: PlanGroup[];
-};
-
-export const plans: Plan[] = [
-  {
-    id: 'annual', kind: 'MRI', name: '연간 MRI', time: '촬영 약 22분', featured: true, image: '/images/fullbody.webp',
-    desc: '매년 한 번, 초기 암 징후를 포함해 수백 가지 질환을 폭넓게 살펴보는 기본 검진',
-    groups: [
-      { label: '검사 부위', items: ['머리 · 목 · 복부 · 골반', '뇌 · 갑상선', '간 · 담낭 · 췌장 · 비장', '신장 · 부신 · 방광', '난소 · 자궁 / 전립선'] },
-      { label: '함께 확인하는 소견', items: ['과거 뇌졸중 흔적', '부비동염', '지방간', '자궁근종', '복부대동맥류'] },
-      { label: '제외 부위', excluded: true, items: ['흉부 · 폐 · 심장 · 유방', '팔 · 다리 · 척추', '식도 · 소장 · 대장'] },
-    ],
-  },
-  {
-    id: 'spine', kind: 'MRI', name: '척추 포함 MRI', time: '촬영 약 47분', image: '/images/scan-man.png',
-    desc: '연간 MRI의 모든 항목에 척추 정밀 평가를 더한 검진',
-    groups: [
-      { label: '검사 부위', items: ['연간 MRI 전 항목', '척추 (경추 · 흉추 · 요추)'] },
-      { label: '척추에서 확인하는 소견', items: ['척추 병변', '종양', '추간판 탈출증 (디스크)', '경추 척추관 협착증', '척추증', '골절', '척추측만증', '관절염', '퇴행성 변화'] },
-      { label: '제외 부위', excluded: true, items: ['흉부 · 폐 · 심장 · 유방', '팔 · 다리', '식도 · 소장 · 대장'] },
-    ],
-  },
-  {
-    id: 'neuro', kind: 'MRI', name: '근골격·신경 정밀 MRI', time: '촬영 약 120분 (2회 방문)', image: '/images/brain-mri.png',
-    desc: '척추 포함 MRI에 신경계와 근골격계 심층 분석까지 더한 가장 포괄적인 검진',
-    groups: [
-      { label: '검사 부위', items: ['척추 포함 MRI 전 항목', '고관절 · 무릎', '머리 · 목 동맥 (MR 혈관조영)', '뇌 나이 분석', '체성분 분석'] },
-      { label: '신경계 소견', items: ['신경 퇴행 가능성', '동맥 협착'] },
-      { label: '근골격계 소견', items: ['관절와순 손상 여부', '연골 건강 상태', '반월상 연골판 손상', '전방십자인대(ACL) 손상', '내측측부인대(MCL) 손상'] },
-      { label: '제외 부위', excluded: true, items: ['흉부 · 폐 · 심장 · 유방', '팔 · 종아리', '식도 · 소장 · 대장'] },
-    ],
-  },
-  {
-    id: 'heart-ct', kind: 'CT', name: '심장 CT', time: '촬영 약 5분', image: '/images/consult.png',
-    desc: '관상동맥 석회화 수치로 심혈관 질환 위험도를 평가하는 검사',
-    groups: [
-      { label: '측정 항목', items: ['관상동맥 석회화 점수 (심전도 동기화 촬영)'] },
-      { label: '제외 부위', excluded: true, items: ['유방 · 흉부 · 폐', '췌장 · 간 · 신장', '식도 · 소장 · 대장'] },
-    ],
-  },
-  {
-    id: 'lung-ct', kind: 'CT', name: '폐 CT', time: '촬영 약 3분', image: '/images/lobby.png',
-    desc: '폐암을 초기 단계에서 찾아내기 위한 선별 검사',
-    groups: [
-      { label: '검사 부위', items: ['폐 및 주변 흉부 구조'] },
-      { label: '확인하는 소견', items: ['폐결절', '종괴', '폐기종', '기도 이상', '심장 크기'] },
-      { label: '제외 부위', excluded: true, items: ['유방', '췌장 · 간 · 신장', '식도 · 소장 · 대장'] },
-    ],
-  },
-];
-
 export const facts = [
   { value: '22분', label: '촬영 시간 (연간 MRI)' },
   { value: '13개', label: '최대 검사 장기 수' },

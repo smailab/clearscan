@@ -4,6 +4,8 @@ import Shell from '@/components/Shell';
 import BookingFlow from '@/components/booking/BookingFlow';
 import { currentUser } from '@/lib/auth/members';
 import { getPricing } from '@/lib/pricing';
+import { listProducts, toPublic } from '@/lib/products';
+import { myCoupons } from '@/lib/coupons';
 
 export const metadata: Metadata = {
   title: '검진 예약 | Scan Longevity',
@@ -21,13 +23,15 @@ export default async function BookingPage({ searchParams }: { searchParams: Prom
     redirect(`/signup?next=${encodeURIComponent(back)}`);
   }
 
-  const { prices, coupleDiscount } = getPricing();
+  const [{ prices, coupleDiscount }, products, coupons] = await Promise.all([getPricing(), listProducts(), myCoupons(user.id)]);
   return (
     <Shell heroHeader={false} cta={false}>
       <BookingFlow
         initialPlan={plan}
         member={{ name: user.name, phone: user.phone, birth: user.birth, sex: user.sex, email: user.email }}
         pricing={{ prices, coupleDiscount }}
+        products={products.map(toPublic)}
+        myCoupons={coupons.map(c => ({ code: c.code, name: c.name }))}
       />
     </Shell>
   );

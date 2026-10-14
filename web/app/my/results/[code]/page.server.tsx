@@ -4,8 +4,8 @@ import { notFound, redirect } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { currentUser } from '@/lib/auth/members';
 import { RESULT_STATUS, resultByCode } from '@/lib/booking/results';
-import { formatDateKo, getPlan } from '@/lib/booking/schedule';
-import { BookingError, myBooking } from '@/lib/booking/service';
+import { formatDateKo } from '@/lib/booking/schedule';
+import { BookingError, myBooking, planNameOf } from '@/lib/booking/service';
 import { centers, site } from '@/lib/data';
 
 export const metadata: Metadata = { title: '검사 결과 | Scan Longevity', robots: { index: false } };
@@ -28,13 +28,13 @@ export default async function ResultPage({ params }: { params: Promise<{ code: s
   if (!result || !result.published || result.userId !== user.id) notFound();
 
   const s = RESULT_STATUS[result.status];
-  const plan = getPlan(booking.planId);
+  const planName = await planNameOf(booking);
 
   return (
     <Shell heroHeader={false} back="/my">
       <section className="sec rs-head" style={{ marginTop: 0 }}>
         <p className="rs-eyebrow">검사 결과</p>
-        <h1>{plan?.name}</h1>
+        <h1>{planName}</h1>
         <p className="rs-meta">{formatDateKo(booking.date)} · {centers[0]?.name} · {booking.code}</p>
         <div className={`rs-status ${s.tone}`}>
           <span>종합 판정</span>

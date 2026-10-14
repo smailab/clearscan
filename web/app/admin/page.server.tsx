@@ -3,7 +3,11 @@ import { redirect } from 'next/navigation';
 import { currentAdmin, listAdmins, type Admin } from '@/lib/auth/admins';
 import { listBookings } from '@/lib/booking/service';
 import { allResults } from '@/lib/booking/results';
-import { formatDateKo, formatPhone, getPlan, kstToday } from '@/lib/booking/schedule';
+import { formatDateKo, formatPhone, kstToday } from '@/lib/booking/schedule';
+import { listProducts, productNames } from '@/lib/products';
+import { describeDiscount, listCoupons } from '@/lib/coupons';
+import { NewProductBox, ProductRow } from '@/components/admin/ProductEditor';
+import { CouponToggle, IssueCouponBox } from '@/components/admin/CouponParts';
 import { listUsers } from '@/lib/auth/members';
 import { won } from '@/lib/data';
 import { AdminLogout, AdminRowActions, ChangePasswordForm, NewAdminForm } from '@/components/admin/AdminParts';
@@ -31,11 +35,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </div>
       <nav className="admin-tabs">
         <a href="/admin" className={tab === 'bookings' ? 'on' : ''}>예약 · 검사 결과</a>
+        <a href="/admin?tab=products" className={tab === 'products' ? 'on' : ''}>상품 관리</a>
+        <a href="/admin?tab=coupons" className={tab === 'coupons' ? 'on' : ''}>쿠폰</a>
         <a href="/admin?tab=members" className={tab === 'members' ? 'on' : ''}>회원 관리</a>
         {admin.role === 'owner' && <a href="/admin?tab=admins" className={tab === 'admins' ? 'on' : ''}>관리자 계정</a>}
         <a href="/admin?tab=account" className={tab === 'account' ? 'on' : ''}>내 계정</a>
       </nav>
       {tab === 'members' ? <Members q={q} />
+        : tab === 'products' ? <Products />
+        : tab === 'coupons' ? <Coupons />
         : tab === 'admins' && admin.role === 'owner' ? <Admins me={admin} />
         : tab === 'account' ? <ChangePasswordForm />
         : <Bookings all={all === '1'} />}
@@ -45,7 +53,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
 async function Bookings({ all }: { all: boolean }) {
   const today = kstToday();
-  const [bookings, results] = await Promise.all([listBookings(), allResults()]);
+  const [bookings, results, names] = await Promise.all([listBookings(), allResults(), productNames()]);
   const list = bookings.filter(b => all || b.date >= today || (b.status === 'confirmed' && !results.get(b.code)?.published));
   const confirmed = list.filter(b => b.status === 'confirmed');
 
@@ -74,15 +82,15 @@ async function Bookings({ all }: { all: boolean }) {
                   editable={b.status === 'confirmed' && Boolean(b.userId)}
                   initial={r ? { status: r.status, summary: r.summary, findings: r.findings, recommendation: r.recommendation, published: r.published } : null}
                   meta={r?.updatedBy ? `${r.updatedBy} · ${new Date(r.updatedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}` : undefined}
-                  summaryLabel={`${formatDateKo(b.date)} ${b.time} · ${getPlan(b.planId)?.name ?? ''} · ${b.person.name}`}
+                  summaryLabel={`${formatDateKo(b.date)} ${b.time} · ${b.planName ?? names.get(b.planId) ?? b.planId} · ${b.person.name}`}
                   cells={<>
                       <td>{formatDateKo(b.date)}<br /><b>{b.time}</b><br /><code>{b.code}</code></td>
-                      <td>{getPlan(b.planId)?.name}{b.couple && <><br /><small>커플</small></>}</td>
+                      <td>{b.planName ?? names.get(b.planId) ?? b.planId}{b.couple && <><br /><small>커플</small></>}</td>
                       <td>{b.person.name}{b.partner && <><br /><small>+ {b.partner.name}</small></>}{!b.userId && <><br /><small>(비회원)</small></>}</td>
                       <td>{formatPhone(b.person.phone)}{b.partner && <><br /><small>{formatPhone(b.partner.phone)}</small></>}</td>
                       <td>{b.person.birth} / {b.person.sex === 'F' ? '여' : '남'}</td>
                       <td>{flags.length ? <span className="warn">{flags.join(' · ')}</span> : '-'}{b.survey.memo && <><br /><small>{b.survey.memo}</small></>}</td>
-                      <td>{won(b.price)}</td>
+                      <td>{won(b.price)}{b.couponCode && <><br /><small>쿠폰 −{won(b.discount ?? 0)}</small></>}</td>
                       <td>{b.status === 'confirmed' ? '확정' : '취소'}</td>
                       </>}
                 />
@@ -162,6 +170,71 @@ async function Admins({ me }: { me: Admin }) {
         </table>
       </div>
       <NewAdminForm />
+    </>
+  );
+}
+
+async function Products() {
+  const products = await listProducts({ includeInactive: true });
+  return (
+    <>
+      <div className="admin-bar">
+        <p className="admin-stat">상품 {products.length}개 · 판매 중 {products.filter(p => p.active).length}개 — 수정하면 사이트·예약에 바로 반영됩니다. 예약이 있을 수 있어 삭제 대신 판매 중지로 숨깁니다.</p>
+      </div>
+      <div className="admin-table">
+        <table>
+          <thead>
+            <tr><th>순서</th><th>이미지</th><th>상품</th><th>가격</th><th>커플 할인</th><th>점유 시간</th><th>상태</th><th>관리</th></tr>
+          </thead>
+          <tbody>
+            {products.map(p => <ProductRow key={p.id} p={p} />)}
+          </tbody>
+        </table>
+      </div>
+      <NewProductBox />
+    </>
+  );
+}
+
+async function Coupons() {
+  const [coupons, products] = await Promise.all([listCoupons(), listProducts({ includeInactive: true })]);
+  const names = new Map(products.map(p => [p.id, p.name]));
+  const today = kstToday();
+  return (
+    <>
+      <IssueCouponBox products={products.map(p => ({ id: p.id, name: p.name + (p.active ? '' : ' (판매 중지)') }))} />
+      <div className="admin-bar" style={{ marginTop: 24 }}>
+        <p className="admin-stat">발급된 쿠폰 {coupons.length}개 · 사용 {coupons.reduce((n, c) => n + c.usedCount, 0)}회</p>
+      </div>
+      <div className="admin-table">
+        <table>
+          <thead>
+            <tr><th>코드</th><th>쿠폰</th><th>적용 상품</th><th>할인</th><th>기간</th><th>사용</th><th>대상</th><th>상태</th></tr>
+          </thead>
+          <tbody>
+            {coupons.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', padding: 32 }}>발급된 쿠폰이 없습니다.</td></tr>}
+            {coupons.map(c => {
+              const expired = c.validUntil < today;
+              const soldOut = c.maxUses !== null && c.usedCount >= c.maxUses;
+              return (
+                <tr key={c.code} className={!c.active || expired ? 'cancelled' : ''}>
+                  <td><code>{c.code}</code></td>
+                  <td><b>{c.name}</b>{c.memo && <><br /><small>{c.memo}</small></>}<br /><small>{c.createdBy} · {new Date(c.createdAt).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}</small></td>
+                  <td>{c.productId ? names.get(c.productId) ?? c.productId : '전체 상품'}</td>
+                  <td>{describeDiscount(c)}</td>
+                  <td>{c.validFrom}<br />~ {c.validUntil}</td>
+                  <td>{c.usedCount}{c.maxUses !== null ? ` / ${c.maxUses}` : ' / 무제한'}</td>
+                  <td>{c.userEmail ? <>{c.userName}<br /><small>{c.userEmail}</small></> : '누구나'}</td>
+                  <td>
+                    {expired ? '기간 만료' : soldOut ? '소진' : c.active ? '사용 가능' : '중지'}
+                    {!expired && <div style={{ marginTop: 6 }}><CouponToggle code={c.code} active={c.active} /></div>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </>
   );
 }

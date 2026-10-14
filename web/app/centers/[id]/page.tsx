@@ -5,7 +5,8 @@ import { notFound } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { CopyButton, Gallery, Hours, SectionTabs } from '@/components/center/CenterParts';
 import { Chevron } from '@/components/icons';
-import { getCenter, mapLinks, plans, won } from '@/lib/data';
+import { getCenter, mapLinks, won } from '@/lib/data';
+import { listProducts } from '@/lib/products';
 import { currentUser } from '@/lib/auth/members';
 import { getPricing } from '@/lib/pricing';
 
@@ -33,9 +34,9 @@ export default async function CenterPage({ params }: Params) {
   const c = getCenter((await params).id);
   if (!c) notFound();
 
-  const prices = (await currentUser()) ? getPricing().prices : null;
+  const prices = (await currentUser()) ? (await getPricing()).prices : null;
   const links = mapLinks(c);
-  const centerPlans = plans.filter(p => c.planIds.includes(p.id));
+  const centerPlans = (await listProducts()).filter(p => c.planIds.includes(p.id));
   const fullAddress = `${c.address} ${c.addressDetail}`;
   const specialties = [...new Set(c.doctors.map(d => d.specialty?.split(' ')[0]).filter(Boolean))] as string[];
 

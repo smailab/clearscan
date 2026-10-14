@@ -168,3 +168,58 @@
 .re-foot .re-actions .btn { min-height: 42px; height: 42px; flex: none; padding: 0 20px; }
 .re-foot .re-actions span { font-size: 12.5px; color: var(--text-2); }
 .re-toggle { cursor: pointer; }
+
+/* ---------- 관리자: 상품 관리 ---------- */
+.pe-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+.re-box select { font: inherit; font-size: 14px; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); color: var(--text); }
+.pe-images > span, .pe-groups > span { font-size: 13px; font-weight: 700; display: block; margin-bottom: 8px; }
+.pe-groups em { font-style: normal; font-weight: 400; color: var(--text-3); font-size: 12px; }
+.pe-images > div { display: flex; gap: 8px; flex-wrap: wrap; }
+.pe-images button { width: 84px; height: 60px; border-radius: 8px; overflow: hidden; border: 2px solid transparent; padding: 0; opacity: .7; }
+.pe-images button.on { border-color: var(--primary); opacity: 1; }
+.pe-images img, .pe-thumb { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pe-thumb { width: 64px; height: 44px; border-radius: 6px; }
+.pe-group-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.pe-group { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; background: var(--surface-2); }
+.pe-group.ex { background: #fbf6f6; }
+.pe-group-head { display: flex; gap: 6px; align-items: center; }
+.pe-group-head input { flex: 1; min-width: 0; padding: 8px 10px !important; font-weight: 700 !important; }
+.pe-group-head .re-pub { font-size: 12px !important; white-space: nowrap; }
+.pe-group-head button { font-size: 12px; color: #d93036; padding: 4px 6px; }
+.pe-group textarea { min-height: 96px !important; font-size: 13px !important; }
+.pe-add { border: 1.5px dashed var(--line); border-radius: 10px; min-height: 120px; color: var(--text-2); font-weight: 600; }
+.pe-flags { display: flex; gap: 18px; flex-wrap: wrap; }
+.pe-pop { margin-left: 6px; font-size: 11px; background: var(--primary); color: #fff; border-radius: 999px; padding: 1px 7px; }
+.pe-new { margin-top: 16px; width: auto !important; padding: 0 22px; }
+
+/* ---------- 관리자: 쿠폰 ---------- */
+.cp-discount { display: flex; gap: 6px; align-items: center; }
+.cp-discount select { flex: none; }
+.cp-discount input { max-width: 120px; }
+.cp-discount span { font-size: 14px; font-weight: 400; color: var(--text-2); }
+.cp-issued { border-top: 1px dashed var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.cp-issued b { font-size: 14px; }
+.cp-issued textarea { font-family: ui-monospace, monospace; min-height: 0 !important; }
+.cp-issued small { color: var(--text-3); font-size: 12px; }
+.re-foot > .admin-msg { margin: 0; font-size: 13px; color: var(--text-2); }
+
+/* ---------- 예약: 쿠폰 ---------- */
+.bk-coupon { margin-top: 18px; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.bk-coupon > label { font-size: 14px; font-weight: 700; }
+.bk-coupon-row { display: flex; gap: 6px; }
+.bk-coupon-row input { flex: 1; min-width: 0; font: inherit; font-size: 15px; border: 1.5px solid var(--line); border-radius: 10px; padding: 0 12px; height: 46px; text-transform: uppercase; letter-spacing: .04em; }
+.bk-coupon-row .btn { min-height: 46px; height: 46px; padding: 0 16px; }
+.bk-coupon-ok { font-size: 13px; color: var(--tag-fg); font-weight: 600; }
+.bk-coupon .bk-error { margin: 0; }
+.bk-my-coupons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; color: var(--text-3); }
+.bk-my-coupons button { font-size: 12.5px; border: 1px dashed var(--primary); color: var(--primary); border-radius: 999px; padding: 5px 10px; min-height: 32px; }
+.bk-discount { color: #d93036 !important; }
+.bk-list { color: var(--text-3); font-weight: 400; font-size: 13px; margin-right: 6px; }
+
+/* ---------- 내 페이지: 내 쿠폰 ---------- */
+.my-coupons { display: grid; gap: 8px; }
+.my-coupons li { position: relative; border: 1.5px dashed #b9cbff; border-radius: 12px; padding: 12px 14px; background: var(--primary-soft); display: flex; flex-direction: column; gap: 2px; }
+.my-coupons b { font-size: 17px; color: var(--primary); }
+.my-coupons .nm { font-size: 14px; font-weight: 600; }
+.my-coupons .meta { font-size: 12px; color: var(--text-2); }
+.my-coupons code { position: absolute; right: 14px; top: 12px; font-size: 12px; color: var(--text-3); }

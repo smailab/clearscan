@@ -1,5 +1,5 @@
 import 'server-only';
-import { getDB } from '@/lib/db';
+import { getDB, type D1Stmt } from '@/lib/db';
 import type { Booking } from './types';
 
 // 예약 저장소 (Cloudflare D1). 로컬 개발도 wrangler/next dev가 만드는 로컬 D1을 쓴다.
@@ -7,6 +7,7 @@ import type { Booking } from './types';
 
 export class SlotConflictError extends Error {}
 export class DuplicateCodeError extends Error {}
+export class CouponUsedError extends Error {}
 
 const SLOT_MIN = 30;
 const slotStarts = (b: Booking) => {
@@ -43,7 +44,8 @@ export async function getByCode(code: string): Promise<Booking | null> {
   return row ? (JSON.parse(row.data) as Booking) : null;
 }
 
-export async function insert(b: Booking): Promise<void> {
+// extra: 같은 트랜잭션에서 함께 실행할 문장 (예: 쿠폰 사용 기록)
+export async function insert(b: Booking, extra: D1Stmt[] = []): Promise<void> {
   const db = await getDB();
   // batch는 하나의 트랜잭션 — 슬롯 하나라도 충돌하면 예약 본문까지 모두 롤백된다
   const stmts = [
@@ -52,6 +54,7 @@ export async function insert(b: Booking): Promise<void> {
     ...slotStarts(b).map(s =>
       db.prepare('INSERT INTO booking_slots (resource, date, slot_start, code) VALUES (?, ?, ?, ?)').bind(b.resource, b.date, s, b.code),
     ),
+    ...extra,
   ];
   try {
     await db.batch(stmts);
@@ -59,14 +62,16 @@ export async function insert(b: Booking): Promise<void> {
     const msg = String((e as Error)?.message ?? e);
     if (msg.includes('booking_slots')) throw new SlotConflictError(msg);
     if (msg.includes('bookings.code')) throw new DuplicateCodeError(msg);
+    if (msg.includes('coupon_redemptions')) throw new CouponUsedError(msg);
     throw e;
   }
 }
 
-export async function saveCancelled(b: Booking): Promise<void> {
+export async function saveCancelled(b: Booking, extra: D1Stmt[] = []): Promise<void> {
   const db = await getDB();
   await db.batch([
     db.prepare('UPDATE bookings SET status = ?, data = ? WHERE code = ?').bind(b.status, JSON.stringify(b), b.code),
     db.prepare('DELETE FROM booking_slots WHERE code = ?').bind(b.code),
+    ...extra,
   ]);
 }

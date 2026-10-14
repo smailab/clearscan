@@ -24,7 +24,11 @@ export type Booking = {
   person: Person;
   partner?: Person;
   survey: Survey;
-  price: number;
+  price: number;           // 최종 결제 예정 금액 (쿠폰 할인 후)
+  planName?: string;       // 예약 당시 상품명
+  listPrice?: number;      // 할인 전 금액
+  couponCode?: string;
+  discount?: number;
   status: 'confirmed' | 'cancelled';
   createdAt: string;
   cancelledAt?: string;
@@ -36,6 +40,7 @@ export type BookingRequest = {
   date: string;
   time: string;
   partner?: Person; // 예약자 본인 정보는 로그인한 회원 정보에서 가져온다
+  couponCode?: string;
   survey: Survey;
   consent: { privacy: boolean; sensitive: boolean };
 };
