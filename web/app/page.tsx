@@ -38,7 +38,7 @@ export default async function Home() {
         )}
         <HeroSlider />
         <div className="stat-row">
-          <span className="stat-pill">📌 연 1회 MRI · 월 분할 결제 가능</span>
+          <span className="stat-pill">📌 연 1회 전신 MRI 검진</span>
           {pricing
             ? <span className="stat-right"><b>{won(pricing.from)}</b>원부터</span>
             : <Link className="stat-right locked" href="/signup?next=%2F%23plans">🔒 요금은 회원 전용</Link>}
@@ -68,10 +68,6 @@ export default async function Home() {
             </div>
           </Link>
         ))}
-        <div className="box">
-          <p className="title">부담 없는 월 분할 결제</p>
-          <p>검진 비용을 매달 나눠서 낼 수 있습니다. 카드사 무이자 할부도 이용할 수 있습니다.</p>
-        </div>
       </section>
 
       {/* 검진 상품 */}
