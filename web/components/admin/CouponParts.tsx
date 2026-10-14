@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import ConfirmButton, { postJson } from '@/components/ConfirmButton';
 
 type Mode = 'shared' | 'batch' | 'members';
 const MODE_LABEL: Record<Mode, string> = { shared: '공용 코드 1개', batch: '1회용 코드 여러 개', members: '회원 지정 발급' };
@@ -112,17 +113,18 @@ export function IssueCouponBox({ products }: { products: { id: string; name: str
 
 export function CouponToggle({ code, active }: { code: string; active: boolean }) {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
   return (
-    <button type="button" className={`re-toggle${active ? '' : ' draft'}`} disabled={busy}
-      onClick={async () => {
-        if (!confirm(active ? '이 쿠폰을 사용 중지할까요? 회원이 더 이상 쓸 수 없습니다.' : '이 쿠폰을 다시 사용할 수 있게 할까요?')) return;
-        setBusy(true);
-        await fetch('/api/admin/coupons/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, active: !active }) });
-        setBusy(false);
-        router.refresh();
-      }}>
-      {active ? '사용 중지' : '다시 사용'}
-    </button>
+    <ConfirmButton
+      label={active ? '사용 중지' : '다시 사용'}
+      className={active ? 're-toggle' : 're-toggle draft'}
+      danger={active}
+      confirmLabel={active ? '사용 중지' : '다시 사용'}
+      message={active ? '이 쿠폰을 사용 중지할까요? 회원이 더 이상 쓸 수 없습니다.' : '이 쿠폰을 다시 사용할 수 있게 할까요?'}
+      onConfirm={async () => {
+        const err = await postJson('/api/admin/coupons/update', { code, active: !active });
+        if (!err) router.refresh();
+        return err;
+      }}
+    />
   );
 }

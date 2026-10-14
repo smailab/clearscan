@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import ConfirmButton, { postJson } from '@/components/ConfirmButton';
 
 async function post(url: string, data: unknown): Promise<{ ok: boolean; error?: string }> {
   try {
@@ -95,34 +96,49 @@ export function NewAdminForm() {
 // 관리자 목록의 한 줄에서 쓰는 조작 버튼 (대표 관리자만 보인다)
 export function AdminRowActions({ id, active, role, isSelf }: { id: string; active: boolean; role: 'owner' | 'staff'; isSelf: boolean }) {
   const router = useRouter();
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pw, setPw] = useState('');
   const [msg, setMsg] = useState('');
 
-  async function act(change: Record<string, unknown>, confirmText: string) {
-    if (!confirm(confirmText)) return;
-    setMsg('');
-    const r = await post('/api/admin/admins/update', { id, ...change });
-    if (!r.ok) { setMsg(r.error!); return; }
-    router.refresh();
-  }
+  const update = async (change: Record<string, unknown>) => {
+    const err = await postJson('/api/admin/admins/update', { id, ...change });
+    if (!err) router.refresh();
+    return err;
+  };
 
   async function resetPassword() {
-    const pw = prompt('새 비밀번호를 입력하세요 (영문·숫자 포함 8자 이상)');
-    if (!pw) return;
     if (!pwRule(pw)) { setMsg('영문과 숫자를 포함해 8자 이상 입력해 주세요.'); return; }
-    const r = await post('/api/admin/admins/update', { id, password: pw });
-    setMsg(r.ok ? '비밀번호를 바꿨습니다. 해당 관리자의 기존 로그인은 해제됐습니다.' : r.error!);
+    const err = await postJson('/api/admin/admins/update', { id, password: pw });
+    setMsg(err ?? '비밀번호를 바꿨습니다. 해당 관리자의 기존 로그인은 해제됐습니다.');
+    if (!err) { setPw(''); setPwOpen(false); }
   }
 
   if (isSelf) return <small>본인 계정</small>;
   return (
     <div className="admin-actions">
-      <button type="button" onClick={() => act({ role: role === 'owner' ? 'staff' : 'owner' }, role === 'owner' ? '일반 관리자로 바꿀까요?' : '대표 관리자로 바꿀까요?')}>
-        {role === 'owner' ? '일반으로' : '대표로'}
-      </button>
-      <button type="button" onClick={resetPassword}>비밀번호 초기화</button>
-      <button type="button" className={active ? 'danger' : ''} onClick={() => act({ active: !active }, active ? '이 관리자 계정을 비활성화할까요? 즉시 로그아웃됩니다.' : '다시 활성화할까요?')}>
-        {active ? '비활성화' : '활성화'}
-      </button>
+      <ConfirmButton
+        label={role === 'owner' ? '일반으로' : '대표로'}
+        message={role === 'owner' ? '일반 관리자로 바꿀까요?' : '대표 관리자로 바꿀까요? 관리자 계정 관리 권한이 생깁니다.'}
+        onConfirm={() => update({ role: role === 'owner' ? 'staff' : 'owner' })}
+      />
+      <button type="button" onClick={() => { setPwOpen(o => !o); setMsg(''); }}>비밀번호 초기화</button>
+      <ConfirmButton
+        label={active ? '비활성화' : '활성화'}
+        className={active ? 'danger' : ''}
+        danger={active}
+        message={active ? '이 관리자 계정을 비활성화할까요? 즉시 로그아웃됩니다.' : '이 관리자 계정을 다시 활성화할까요?'}
+        onConfirm={() => update({ active: !active })}
+      />
+      {pwOpen && (
+        <div className="cb-ask">
+          <div className="cb-msg">새 비밀번호 <small>(영문·숫자 포함 8자 이상)</small></div>
+          <input type="text" value={pw} autoComplete="off" onChange={e => setPw(e.target.value)} className="cb-input" />
+          <div className="cb-actions">
+            <button type="button" className="cb-cancel" onClick={() => { setPwOpen(false); setPw(''); }}>취소</button>
+            <button type="button" className="cb-ok" onClick={resetPassword}>변경</button>
+          </div>
+        </div>
+      )}
       {msg && <small className="admin-msg">{msg}</small>}
     </div>
   );

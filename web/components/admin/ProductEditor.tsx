@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import ConfirmButton, { postJson } from '@/components/ConfirmButton';
 import { PRODUCT_ID_RE, PRODUCT_IMAGES, type PlanGroup, type ProductWithPrice } from '@/lib/products-shared';
 
 type Form = {
@@ -138,26 +139,11 @@ function ProductForm({ initial, mode, onDone }: { initial?: ProductWithPrice; mo
 export function ProductRow({ p, meta, canDelete = false }: { p: ProductWithPrice; meta?: string; canDelete?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
 
   async function remove() {
-    const ok = confirm(`'${p.name}' 상품을 삭제할까요?
-
-· 되돌릴 수 없습니다.
-· 예정된 예약이 있으면 삭제되지 않습니다.
-· 지난 예약 기록에는 상품명이 그대로 남습니다.
-· 이 상품 전용 쿠폰은 사용 중지됩니다.
-
-잠시 숨기려면 삭제 대신 '판매 중지'를 쓰세요.`);
-    if (!ok) return;
-    setBusy(true);
-    setErr('');
-    const res = await fetch('/api/admin/products/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: p.id }) });
-    const json = await res.json().catch(() => ({}));
-    setBusy(false);
-    if (!res.ok) { setErr(json.error ?? '삭제하지 못했습니다.'); return; }
-    router.refresh();
+    const err = await postJson('/api/admin/products/delete', { id: p.id });
+    if (!err) router.refresh();
+    return err;
   }
   return (
     <>
@@ -175,9 +161,26 @@ export function ProductRow({ p, meta, canDelete = false }: { p: ProductWithPrice
         <td>
           <div className="admin-actions">
             <button type="button" className="re-toggle" aria-expanded={open} onClick={() => setOpen(o => !o)}>수정 {open ? '▴' : '▾'}</button>
-            {canDelete && <button type="button" className="danger" disabled={busy} onClick={remove}>{busy ? '삭제 중…' : '삭제'}</button>}
+            {canDelete && (
+              <ConfirmButton
+                label="삭제"
+                className="danger"
+                danger
+                confirmLabel="삭제"
+                onConfirm={remove}
+                message={<>
+                  <b>&lsquo;{p.name}&rsquo; 상품을 삭제할까요?</b>
+                  <ul>
+                    <li>되돌릴 수 없습니다.</li>
+                    <li>예정된 예약이 있으면 삭제되지 않습니다.</li>
+                    <li>지난 예약 기록에는 상품명이 남습니다.</li>
+                    <li>이 상품 전용 쿠폰은 사용 중지됩니다.</li>
+                  </ul>
+                  <small>잠시 숨기려면 삭제 대신 &lsquo;판매 중지&rsquo;를 쓰세요.</small>
+                </>}
+              />
+            )}
           </div>
-          {err && <small className="admin-msg pe-err">{err}</small>}
         </td>
       </tr>
       {open && (

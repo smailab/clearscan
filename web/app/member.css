@@ -225,3 +225,20 @@
 .my-coupons code { position: absolute; right: 14px; top: 12px; font-size: 12px; color: var(--text-3); }
 
 .pe-err { color: #d93036 !important; max-width: 220px; }
+
+/* ---------- 페이지 안 확인 버튼 (confirm() 대체) ---------- */
+.cb { display: inline-flex; flex-direction: column; gap: 4px; }
+.cb-error { font-size: 12px; color: #d93036; font-weight: 600; max-width: 260px; line-height: 1.4; }
+.cb-ask { flex-basis: 100%; width: 100%; max-width: 360px; border: 1.5px solid var(--primary); background: #f7f9ff; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.cb-ask.danger { border-color: #e58a8d; background: #fff6f6; }
+.cb-msg { font-size: 13px; line-height: 1.5; color: var(--text); white-space: normal; }
+.cb-msg ul { margin: 6px 0 4px 16px; list-style: disc; }
+.cb-msg li { font-size: 12.5px; color: var(--text-2); }
+.cb-msg small { color: var(--text-3); font-size: 12px; }
+.cb-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.cb-actions button { min-height: 34px; padding: 0 14px; border-radius: 8px; font-size: 13px; font-weight: 700; }
+.cb-cancel { border: 1px solid var(--line); background: #fff; color: var(--text-2); }
+.cb-ok { background: var(--primary); color: #fff; }
+.cb-ask.danger .cb-ok { background: #d93036; }
+.cb-input { font: inherit; font-size: 14px; border: 1.5px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.my-booking .actions .cb-ask { max-width: 100%; }
