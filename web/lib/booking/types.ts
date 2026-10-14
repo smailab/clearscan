@@ -12,7 +12,7 @@ export type Survey = {
   memo: string;
 };
 
-// 한 예약에 담긴 검사 하나 (여러 상품 동시 예약)
+// 예전(분리 전) 여러 상품 예약에 담긴 검사 하나 — 지금은 상품마다 예약을 따로 만든다
 export type BookingItem = {
   planId: string;
   planName: string;
@@ -31,7 +31,8 @@ export type Booking = {
   time: string;
   slots: number;            // 방문 전체 길이 (30분 단위)
   couple: boolean;
-  items?: BookingItem[];     // 여러 상품 예약 시 검사별 일정 (없으면 planId 하나짜리 예전 예약)
+  items?: BookingItem[];     // 예전 묶음 예약에만 있음 (새 예약은 상품 1개 = 예약 1건)
+  groupCode?: string;        // 함께 예약한 묶음의 대표 예약번호 (같은 신청에서 만든 예약끼리 같은 값)
   person: Person;
   partner?: Person;
   survey: Survey;
@@ -48,9 +49,10 @@ export type Booking = {
 export type BookingRequest = {
   planId?: string;          // 예전 단일 상품 요청 호환
   planIds?: string[];
+  items?: { planId: string; date: string; time: string }[]; // 상품별 날짜·시간 (새 방식)
   couple: boolean;
-  date: string;
-  time: string;
+  date?: string;            // items가 없을 때: 모든 상품을 이 날짜·시간부터 이어서 배치
+  time?: string;
   partner?: Person; // 예약자 본인 정보는 로그인한 회원 정보에서 가져온다
   couponCode?: string;
   survey: Survey;

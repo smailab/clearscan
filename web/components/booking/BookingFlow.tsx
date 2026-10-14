@@ -3,18 +3,21 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { site, won } from '@/lib/data';
-import type { Product } from '@/lib/products-shared';
-import { MAX_ITEMS, buildSegments } from '@/lib/booking/visit';
+import { slotsNeeded, type Product } from '@/lib/products-shared';
+import { MAX_ITEMS, orderItems } from '@/lib/booking/visit';
 import {
   BOOKING_WINDOW_MONTHS, HOURS_NOTE, WEEKDAYS, addDays, addMonths, dayOfWeek, firstBookableDate,
-  formatDateKo, formatPhone, isBookableDate, kstToday, lastBookableDate, toHHMM, toMin,
+  formatDateKo, formatPhone, isBookableDate, kstToday, lastBookableDate, overlaps, toMin,
 } from '@/lib/booking/schedule';
 import type { Person, SlotInfo, Survey } from '@/lib/booking/types';
 
 const STEPS = ['상품', '일정', '정보', '확인'];
 const emptyPerson: Person = { name: '', phone: '', birth: '', sex: 'F' };
 
-type Done = { code: string; date: string; time: string; planId: string; planName?: string; couple: boolean; price: number; discount?: number };
+type DoneItem = { code: string; date: string; time: string; planId: string; planName?: string; price: number; discount?: number };
+type Done = { bookings: DoneItem[]; couple: boolean };
+// 상품별 예약 일정 (상품마다 예약이 따로 만들어진다)
+type Sched = Record<string, { date: string; time: string }>;
 type AppliedCoupon = { code: string; name: string; discount: number; price: number };
 
 export type Member = Person & { email: string };
@@ -43,8 +46,9 @@ export default function BookingFlow({ initialPlan, member, pricing, products, my
   });
   const planKey = planIds.join(',');
   const [couple, setCouple] = useState(false);
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  const [sched, setSched] = useState<Sched>({});
+  const [active, setActive] = useState('');   // 일정을 고르고 있는 상품
+  const [date, setDate] = useState('');       // 지금 달력에서 보고 있는 날짜 (active 상품용)
   const [slots, setSlots] = useState<SlotInfo[] | null>(null);
   const [partner, setPartner] = useState<Person>({ ...emptyPerson, sex: 'M' });
   const [survey, setSurvey] = useState<Survey>({ metalImplant: false, claustrophobia: false, pregnant: false, memo: '' });
@@ -56,7 +60,7 @@ export default function BookingFlow({ initialPlan, member, pricing, products, my
   const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
   const [couponMsg, setCouponMsg] = useState('');
 
-  const selected = planIds.map(getPlan).filter((p): p is Product => Boolean(p));
+  const selected = orderItems(planIds.map(getPlan).filter((p): p is Product => Boolean(p)));
   const coupleAllowed = selected.length > 0 && selected.every(p => p.couple);
   const isCouple = couple && coupleAllowed;
   const totalPrice = selected.reduce((n, p) => n + priceFor(p.id, isCouple), 0);
@@ -93,18 +97,49 @@ export default function BookingFlow({ initialPlan, member, pricing, products, my
     }
   }
 
-  // 상품·커플 여부·날짜가 바뀌면 시간 다시 조회
+  // 상품 구성·커플 여부가 바뀌면 일정을 다시 고른다 (검사 길이가 달라진다)
+  useEffect(() => { setSched({}); setActive(''); setDate(''); }, [planKey, isCouple]);
+
+  // 일정 단계에 들어오면 아직 일정이 없는 첫 상품부터
+  const activeId = active && planIds.includes(active) ? active : (selected.find(p => !sched[p.id]) ?? selected[0])?.id ?? '';
+  const activePlan = getPlan(activeId);
+
+  // 선택 중인 상품·날짜의 빈 시간 조회
   useEffect(() => {
-    setTime('');
-    if (!date) { setSlots(null); return; }
+    if (!date || !activeId) { setSlots(null); return; }
     let alive = true;
     setSlots(null);
-    fetch(`/api/availability?plans=${encodeURIComponent(planKey)}&couple=${isCouple ? 1 : 0}&date=${date}`)
+    fetch(`/api/availability?plan=${encodeURIComponent(activeId)}&couple=${isCouple ? 1 : 0}&date=${date}`)
       .then(r => r.json())
       .then(d => { if (alive) setSlots(d.slots ?? []); })
       .catch(() => { if (alive) setSlots([]); });
     return () => { alive = false; };
-  }, [planKey, isCouple, date]);
+  }, [activeId, isCouple, date]);
+
+  // 같은 날 함께 예약한 다른 검사와 시간이 겹치는지 (한 사람이 동시에 두 검사를 받을 수 없다)
+  const clashWith = (planId: string, d: string, t: string) => {
+    const p = getPlan(planId);
+    if (!p) return undefined;
+    return selected.find(o => {
+      const s = sched[o.id];
+      return o.id !== planId && s && s.date === d && overlaps(toMin(t), slotsNeeded(p, isCouple), toMin(s.time), slotsNeeded(o, isCouple));
+    });
+  };
+
+  function pickTime(t: string) {
+    const next = { ...sched, [activeId]: { date, time: t } };
+    setSched(next);
+    // 일정이 없는 다음 상품으로 넘어가고, 같은 날짜를 먼저 보여준다
+    const rest = selected.find(p => !next[p.id]);
+    if (rest) setActive(rest.id);
+  }
+
+  function selectPlan(id: string) {
+    setActive(id);
+    setDate(sched[id]?.date ?? date);
+  }
+
+  const allScheduled = selected.length > 0 && selected.every(p => sched[p.id]);
 
   // 단계가 바뀐 직후의 클릭(더블클릭 등)은 무시해서 확인 화면을 건너뛰고 바로 예약되지 않게 한다
   const stepAt = useRef(0);
@@ -113,7 +148,7 @@ export default function BookingFlow({ initialPlan, member, pricing, products, my
   const personOk = (p: Person) => p.name.trim().length >= 2 && /^01[016789]\d{7,8}$/.test(p.phone.replace(/\D/g, '')) && /^\d{4}-\d{2}-\d{2}$/.test(p.birth);
   const canNext = [
     planIds.length > 0,
-    Boolean(date && time),
+    allScheduled,
     (!isCouple || personOk(partner)) && consent.privacy && consent.sensitive,
     true,
   ][step];
@@ -126,12 +161,15 @@ export default function BookingFlow({ initialPlan, member, pricing, products, my
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planIds, couple: isCouple, date, time, partner: isCouple ? partner : undefined, survey, consent, couponCode: coupon?.code }),
+        body: JSON.stringify({
+          items: selected.map(p => ({ planId: p.id, ...sched[p.id] })),
+          couple: isCouple, partner: isCouple ? partner : undefined, survey, consent, couponCode: coupon?.code,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? '예약에 실패했습니다.');
-        if (res.status === 409) { setStep(1); setSlots(null); setTime(''); refetch(); }
+        if (res.status === 409) { setStep(1); refetch(); }
         return;
       }
       setDone(data);
@@ -143,22 +181,38 @@ export default function BookingFlow({ initialPlan, member, pricing, products, my
   }
 
   function refetch() {
-    fetch(`/api/availability?plans=${encodeURIComponent(planKey)}&couple=${isCouple ? 1 : 0}&date=${date}`).then(r => r.json()).then(d => setSlots(d.slots ?? []));
+    if (!date || !activeId) return;
+    fetch(`/api/availability?plan=${encodeURIComponent(activeId)}&couple=${isCouple ? 1 : 0}&date=${date}`).then(r => r.json()).then(d => setSlots(d.slots ?? []));
   }
 
   if (done) {
-    const doneName = done.planName ?? getPlan(done.planId)?.name ?? done.planId;
+    const many = done.bookings.length > 1;
+    const total = done.bookings.reduce((n, b) => n + b.price, 0);
+    const disc = done.bookings.reduce((n, b) => n + (b.discount ?? 0), 0);
     return (
       <section className="sec bk-done" style={{ marginTop: 0 }}>
         <div className="bk-check">✓</div>
         <h1>예약이 완료되었습니다</h1>
-        <p className="sub">예약번호는 조회·취소할 때 필요하니 꼭 저장해 두세요.</p>
-        <div className="bk-code">{done.code}</div>
+        <p className="sub">{many ? `검사마다 예약번호가 따로 발급됐어요 (${done.bookings.length}건). ` : ''}예약번호는 조회·취소할 때 필요하니 꼭 저장해 두세요.</p>
+        {many ? (
+          <ul className="bk-done-list">
+            {done.bookings.map(b => (
+              <li key={b.code}>
+                <code>{b.code}</code>
+                <b>{b.planName ?? getPlan(b.planId)?.name ?? b.planId}</b>
+                <span>{formatDateKo(b.date)} {b.time} · {won(b.price)}원</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="bk-code">{done.bookings[0].code}</div>
+        )}
         <dl className="bk-summary">
-          <div><dt>검진</dt><dd>{doneName}{done.couple && ' · 커플 플랜'}</dd></div>
-          <div><dt>일시</dt><dd>{formatDateKo(done.date)} {done.time}</dd></div>
+          {!many && <div><dt>검진</dt><dd>{done.bookings[0].planName ?? getPlan(done.bookings[0].planId)?.name}{done.couple && ' · 커플 플랜'}</dd></div>}
+          {!many && <div><dt>일시</dt><dd>{formatDateKo(done.bookings[0].date)} {done.bookings[0].time}</dd></div>}
+          {many && done.couple && <div><dt>플랜</dt><dd>커플 플랜</dd></div>}
           <div><dt>장소</dt><dd>{site.clinic}<br />{site.address}</dd></div>
-          <div><dt>결제 예정</dt><dd>{won(done.price)}원 <small>(현장 결제{done.discount ? ` · 쿠폰 ${won(done.discount)}원 할인` : ''})</small></dd></div>
+          <div><dt>결제 예정</dt><dd>{won(total)}원 <small>(현장 결제{disc ? ` · 쿠폰 ${won(disc)}원 할인` : ''})</small></dd></div>
         </dl>
         <div className="box">
           <p className="title">검진 전 안내</p>
@@ -183,7 +237,7 @@ export default function BookingFlow({ initialPlan, member, pricing, products, my
       {step === 0 && (
         <section className="sec" style={{ marginTop: 0 }}>
           <h2 className="bk-h">어떤 검진을 받으시겠어요?</h2>
-          <p className="bk-plans-hint">여러 개를 함께 선택하면 같은 날 한 번 방문으로 이어서 받을 수 있어요. (최대 {MAX_ITEMS}개)</p>
+          <p className="bk-plans-hint">여러 개를 함께 선택할 수 있어요 (최대 {MAX_ITEMS}개). 검사마다 예약이 따로 만들어지고, 날짜·시간도 각각 고를 수 있어요.</p>
           <div className="bk-plans">
             {products.map(p => (
               <label key={p.id} className={`bk-plan${planIds.includes(p.id) ? ' on' : ''}`}>
@@ -213,7 +267,25 @@ export default function BookingFlow({ initialPlan, member, pricing, products, my
 
       {step === 1 && (
         <section className="sec" style={{ marginTop: 0 }}>
-          <h2 className="bk-h">날짜를 선택하세요</h2>
+          {selected.length > 1 && (
+            <>
+              <h2 className="bk-h">검사별 일정</h2>
+              <p className="bk-plans-hint">검사를 누르고 날짜·시간을 고르세요. 검사마다 따로 예약됩니다.</p>
+              <div className="bk-sched">
+                {selected.map(p => {
+                  const s = sched[p.id];
+                  return (
+                    <button key={p.id} type="button" className={`${p.id === activeId ? 'on' : ''}${s ? ' set' : ''}`} aria-pressed={p.id === activeId} onClick={() => selectPlan(p.id)}>
+                      <span className="kind">{p.kind}</span>
+                      <b>{p.name}</b>
+                      <small>{s ? `${formatDateKo(s.date)} ${s.time}` : '날짜·시간 선택'}</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+          <h2 className="bk-h" style={selected.length > 1 ? { marginTop: 24 } : undefined}>{selected.length > 1 && activePlan ? `${activePlan.name} 날짜` : '날짜를 선택하세요'}</h2>
           <div className="bk-cal-head">
             <button type="button" aria-label="이전 달" disabled={month <= firstMonth} onClick={() => setMonth(addMonths(`${month}-01`, -1).slice(0, 7))}>‹</button>
             <strong>{Number(month.slice(0, 4))}년 {Number(month.slice(5))}월</strong>
@@ -255,13 +327,19 @@ export default function BookingFlow({ initialPlan, member, pricing, products, my
                 <p className="bk-empty">이 날은 예약이 모두 찼어요. 다른 날짜를 선택해 주세요.</p>
               ) : (
                 <div className="bk-times">
-                  {slots.map(s => (
-                    <button key={s.time} type="button" disabled={!s.available} className={time === s.time ? 'on' : ''} onClick={() => setTime(s.time)}>
-                      {s.time}
-                    </button>
-                  ))}
+                  {slots.map(s => {
+                    const clash = clashWith(activeId, date, s.time);
+                    const on = sched[activeId]?.date === date && sched[activeId]?.time === s.time;
+                    return (
+                      <button key={s.time} type="button" disabled={!s.available || Boolean(clash)} className={on ? 'on' : ''}
+                        title={clash ? `${clash.name} 시간과 겹쳐요` : undefined} onClick={() => pickTime(s.time)}>
+                        {s.time}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
+              {selected.length > 1 && <p className="note">같은 날 다른 검사와 겹치는 시간은 선택할 수 없어요.</p>}
               {isCouple && <p className="note">커플 플랜은 두 분이 연이어 촬영하므로 시작 시간을 기준으로 표시합니다.</p>}
             </>
           )}
@@ -311,14 +389,15 @@ export default function BookingFlow({ initialPlan, member, pricing, products, my
         <section className="sec" style={{ marginTop: 0 }}>
           <h2 className="bk-h">예약 내용을 확인하세요</h2>
           <dl className="bk-summary">
-            <div><dt>검진</dt><dd>
-              {buildSegments(selected, isCouple, toMin(time || '00:00')).map(seg => {
-                const p = getPlan(seg.planId)!;
-                return <span key={seg.planId} className="bk-item-line"><b>{toHHMM(seg.start)}</b> {p.name} <small>{p.time} · {won(priceFor(p.id, isCouple))}원</small></span>;
-              })}
+            <div><dt>{selected.length > 1 ? `검진 ${selected.length}건` : '검진'}</dt><dd>
+              {selected.map(p => (
+                <span key={p.id} className="bk-item-line">
+                  <b>{formatDateKo(sched[p.id]?.date ?? '')} {sched[p.id]?.time}</b> {p.name} <small>{p.time} · {won(priceFor(p.id, isCouple))}원</small>
+                </span>
+              ))}
+              {selected.length > 1 && <small>검사마다 예약번호가 따로 발급되고, 결과도 검사별로 확인할 수 있어요.</small>}
               {isCouple && <small>커플 플랜 (두 분 모두 검진)</small>}
             </dd></div>
-            <div><dt>일시</dt><dd>{formatDateKo(date)} {time}</dd></div>
             <div><dt>예약자</dt><dd>{member.name} · {formatPhone(member.phone)}</dd></div>
             {isCouple && <div><dt>동반자</dt><dd>{partner.name} · {formatPhone(partner.phone)}</dd></div>}
             <div><dt>장소</dt><dd>{site.clinic}<br /><small>{site.address}</small></dd></div>

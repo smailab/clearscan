@@ -60,16 +60,26 @@ export async function getByCode(code: string): Promise<Booking | null> {
   return row ? (JSON.parse(row.data) as Booking) : null;
 }
 
-// extra: 같은 트랜잭션에서 함께 실행할 문장 (예: 쿠폰 사용 기록)
-export async function insert(b: Booking, extra: D1Stmt[] = []): Promise<void> {
+// 같은 묶음(함께 예약)의 예약들
+export async function listGroup(groupCode: string): Promise<Booking[]> {
   const db = await getDB();
-  // batch는 하나의 트랜잭션 — 슬롯 하나라도 충돌하면 예약 본문까지 모두 롤백된다
+  const { results } = await db.prepare("SELECT data FROM bookings WHERE json_extract(data, '$.groupCode') = ? ORDER BY date, time")
+    .bind(groupCode).all<{ data: string }>();
+  return parse(results);
+}
+
+// 여러 예약을 한 번에 저장 (함께 예약한 상품들). extra: 같은 트랜잭션에서 함께 실행할 문장 (예: 쿠폰 사용 기록)
+export async function insertMany(list: Booking[], extra: D1Stmt[] = []): Promise<void> {
+  const db = await getDB();
+  // batch는 하나의 트랜잭션 — 슬롯 하나라도 충돌하면 모든 예약이 함께 롤백된다
   const stmts = [
-    db.prepare('INSERT INTO bookings (code, date, time, resource, status, phone, created_at, user_id, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(b.code, b.date, b.time, b.resource, b.status, b.person.phone, b.createdAt, b.userId ?? null, JSON.stringify(b)),
-    ...occupied(b).map(o =>
-      db.prepare('INSERT INTO booking_slots (resource, date, slot_start, code) VALUES (?, ?, ?, ?)').bind(o.resource, b.date, o.start, b.code),
-    ),
+    ...list.flatMap(b => [
+      db.prepare('INSERT INTO bookings (code, date, time, resource, status, phone, created_at, user_id, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .bind(b.code, b.date, b.time, b.resource, b.status, b.person.phone, b.createdAt, b.userId ?? null, JSON.stringify(b)),
+      ...occupied(b).map(o =>
+        db.prepare('INSERT INTO booking_slots (resource, date, slot_start, code) VALUES (?, ?, ?, ?)').bind(o.resource, b.date, o.start, b.code),
+      ),
+    ]),
     ...extra,
   ];
   try {
@@ -82,6 +92,8 @@ export async function insert(b: Booking, extra: D1Stmt[] = []): Promise<void> {
     throw e;
   }
 }
+
+export const insert = (b: Booking, extra: D1Stmt[] = []) => insertMany([b], extra);
 
 export async function saveCancelled(b: Booking, extra: D1Stmt[] = []): Promise<void> {
   const db = await getDB();

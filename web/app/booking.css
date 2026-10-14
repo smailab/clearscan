@@ -109,3 +109,23 @@
 .bk-item-line small { display: block; font-weight: 400; color: var(--text-3); font-size: 12px; }
 .bk-plan .pr::before { content: ''; }
 .bk-plans-hint { font-size: 12.5px; color: var(--text-2); margin: -6px 0 10px; }
+
+/* ---------- 검사별 일정 (여러 상품 예약) ---------- */
+.bk-sched { display: grid; gap: 8px; }
+.bk-sched button { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; text-align: left;
+  min-height: 56px; padding: 10px 14px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); }
+.bk-sched button .kind { grid-row: span 2; font-size: 11px; font-weight: 700; color: var(--primary); background: var(--primary-soft); border-radius: 6px; padding: 3px 7px; }
+.bk-sched button b { font-size: 14.5px; color: var(--text); }
+.bk-sched button small { font-size: 12.5px; color: var(--text-3); }
+.bk-sched button.set small { color: var(--primary); font-weight: 600; }
+.bk-sched button.set small::before { content: '✓ '; }
+.bk-sched button.on { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+
+.bk-done-list { display: grid; gap: 8px; margin: 16px 0 4px; text-align: left; }
+.bk-done-list li { display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); }
+.bk-done-list code { font-size: 15px; font-weight: 800; color: var(--primary); letter-spacing: .04em; }
+.bk-done-list b { font-size: 14.5px; }
+.bk-done-list span { font-size: 13px; color: var(--text-2); }
+
+.admin-table .grp { display: inline-block; margin-top: 3px; font-size: 11px; font-weight: 700; color: var(--primary); background: var(--primary-soft); border-radius: 5px; padding: 1px 6px; }
+.my-booking .grp { font-size: 12px; color: var(--text-3); }

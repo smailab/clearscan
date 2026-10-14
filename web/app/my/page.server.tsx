@@ -115,6 +115,7 @@ function BookingItem({ b, name, today, hasResult }: { b: Booking; name: string; 
         <span className="code">{b.code}</span>
       </div>
       <p className="nm">{name}{b.couple && ' · 커플 플랜'}</p>
+      {b.groupCode && <p className="grp">함께 신청한 검사 · 묶음 {b.groupCode}</p>}
       <p className="when">{formatDateKo(b.date)} {b.time}</p>
       <p className="meta">{won(b.price)}원 · 현장 결제{b.discount ? ` · 쿠폰 ${won(b.discount)}원 할인` : ''}{b.partner && ` · 동반자 ${b.partner.name}`}</p>
       <div className="actions">

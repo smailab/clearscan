@@ -64,6 +64,8 @@ async function Bookings({ all }: { all: boolean }) {
   const [bookings, results, names] = await Promise.all([listBookings(), allResults(), productNames()]);
   const list = bookings.filter(b => all || b.date >= today || (b.status === 'confirmed' && !results.get(b.code)?.published));
   const confirmed = list.filter(b => b.status === 'confirmed');
+  const groupSize = new Map<string, number>();
+  for (const b of bookings) if (b.groupCode) groupSize.set(b.groupCode, (groupSize.get(b.groupCode) ?? 0) + 1);
 
   return (
     <>
@@ -93,7 +95,11 @@ async function Bookings({ all }: { all: boolean }) {
                   summaryLabel={`${formatDateKo(b.date)} ${b.time} · ${b.planName ?? names.get(b.planId) ?? b.planId} · ${b.person.name}`}
                   cells={<>
                       <td>{formatDateKo(b.date)}<br /><b>{b.time}</b><br /><code>{b.code}</code></td>
-                      <td>{b.planName ?? names.get(b.planId) ?? b.planId}{b.couple && <><br /><small>커플</small></>}</td>
+                      <td>
+                        {b.planName ?? names.get(b.planId) ?? b.planId}{b.couple && <><br /><small>커플</small></>}
+                        {b.items && b.items.length > 1 && <><br /><small>{b.items.map(it => `${it.start} ${it.planName}`).join(' → ')}</small></>}
+                        {b.groupCode && <><br /><span className="grp" title="같은 신청에서 함께 예약한 검사">함께 예약 {groupSize.get(b.groupCode)}건 · {b.groupCode}</span></>}
+                      </td>
                       <td>{b.person.name}{b.partner && <><br /><small>+ {b.partner.name}</small></>}{!b.userId && <><br /><small>(비회원)</small></>}</td>
                       <td>{formatPhone(b.person.phone)}{b.partner && <><br /><small>{formatPhone(b.partner.phone)}</small></>}</td>
                       <td>{b.person.birth} / {b.person.sex === 'F' ? '여' : '남'}</td>

@@ -3,13 +3,13 @@ import { randomInt } from 'crypto';
 import type { User } from '@/lib/auth/members';
 import { CouponError, checkCoupon, redemptionStmt, releaseCouponUse, reserveCouponUse, restoreStmts } from '@/lib/coupons';
 import { listProducts } from '@/lib/products';
-import { priceOf, type ProductWithPrice } from '@/lib/products-shared';
+import { priceOf, slotsNeeded, type ProductWithPrice } from '@/lib/products-shared';
 import {
-  CouponUsedError, DuplicateCodeError, SlotConflictError, getByCode, insert, listAll, listByUser, saveCancelled, takenSlots,
+  CouponUsedError, DuplicateCodeError, SlotConflictError, getByCode, insertMany, listAll, listByUser, listGroup, saveCancelled, takenSlots,
 } from './store';
-import { canCancel, candidateStarts, isBookableDate, isValidDate, kstToday, normalizePhone, toHHMM, toMin } from './schedule';
+import { canCancel, candidateStarts, isBookableDate, isValidDate, kstToday, normalizePhone, overlaps, toHHMM, toMin } from './schedule';
 import { MAX_ITEMS, buildSegments, orderItems, segmentSlotStarts, totalSlots } from './visit';
-import type { Booking, BookingItem, BookingRequest, Person, SlotInfo } from './types';
+import type { Booking, BookingRequest, Person, SlotInfo } from './types';
 
 export class BookingError extends Error {
   constructor(message: string, public status = 400) { super(message); }
@@ -69,7 +69,40 @@ function validPerson(p: Person | undefined, label: string): Person {
 
 const TAKEN_MSG = '방금 다른 예약이 들어온 시간입니다. 다른 시간을 선택해 주세요.';
 const itemPrices = (products: ProductWithPrice[], couple: boolean) => products.map(p => ({ product: p, price: priceOf(p, couple) }));
-const planIdsOf = (req: { planIds?: string[]; planId?: string }) => (req.planIds?.length ? req.planIds : req.planId ? [req.planId] : []);
+const planIdsOf = (req: { planIds?: string[]; planId?: string; items?: { planId: string }[] }) =>
+  req.items?.length ? req.items.map(it => it.planId) : req.planIds?.length ? req.planIds : req.planId ? [req.planId] : [];
+
+// 상품별 일정: 새 방식은 상품마다 날짜·시간을 받고, 예전 방식은 한 시작 시각부터 이어서 배치한다
+type Plan = { product: ProductWithPrice; date: string; start: number; slots: number };
+function plansOf(req: BookingRequest, products: ProductWithPrice[], couple: boolean): Plan[] {
+  const hhmm = (t: unknown) => (/^\d{2}:\d{2}$/.test(String(t ?? '')) ? toMin(String(t)) : -1);
+  if (req.items?.length) {
+    return products.map(p => {
+      const it = req.items!.find(x => String(x.planId).trim() === p.id)!;
+      return { product: p, date: String(it.date ?? ''), start: hhmm(it.time), slots: slotsNeeded(p, couple) };
+    });
+  }
+  const date = String(req.date ?? '');
+  const start = hhmm(req.time);
+  if (start < 0 || !candidateStarts(date, totalSlots(products, couple)).includes(start)) throw new BookingError('예약할 수 없는 시간입니다.');
+  return buildSegments(products, couple, start).map(seg => ({
+    product: products.find(p => p.id === seg.planId)!, date, start: seg.start, slots: seg.slots,
+  }));
+}
+
+// 쿠폰 할인액을 예약(상품)별로 나눈다 — 상품 전용 쿠폰은 그 상품에, 전체 쿠폰은 금액 비율대로 (백원 단위)
+function splitDiscount(prices: number[], total: number, onlyIndex: number): number[] {
+  if (onlyIndex >= 0) return prices.map((_, i) => (i === onlyIndex ? total : 0));
+  const sum = prices.reduce((n, p) => n + p, 0) || 1;
+  const out = prices.map(p => Math.floor((total * p) / sum / 100) * 100);
+  let rest = total - out.reduce((n, d) => n + d, 0);
+  for (let i = 0; i < out.length && rest > 0; i++) {
+    const add = Math.min(rest, prices[i] - out[i]);
+    out[i] += add;
+    rest -= add;
+  }
+  return out;
+}
 
 // 예약 화면의 쿠폰 확인 (할인 금액 미리보기)
 export async function previewCoupon(user: User, code: string, planIds: string[], coupleReq: boolean) {
@@ -85,17 +118,30 @@ export async function previewCoupon(user: User, code: string, planIds: string[],
   }
 }
 
-// 예약자 본인 정보는 클라이언트 입력이 아니라 로그인한 회원 정보로 채운다
-export async function createBooking(req: BookingRequest, user: User): Promise<Booking> {
+// 예약자 본인 정보는 클라이언트 입력이 아니라 로그인한 회원 정보로 채운다.
+// 여러 상품을 함께 신청하면 상품마다 예약을 따로 만들고(예약번호·시간·검사 결과가 각각), groupCode로 묶는다.
+export async function createBooking(req: BookingRequest, user: User): Promise<Booking[]> {
   const products = await resolveProducts(planIdsOf(req));
   if (!req.consent?.privacy || !req.consent?.sensitive) throw new BookingError('개인정보 및 민감정보 수집·이용에 동의해 주세요.');
-  if (!isValidDate(req.date) || !isBookableDate(req.date)) throw new BookingError('예약할 수 없는 날짜입니다.');
 
   const couple = Boolean(req.couple) && coupleOk(products);
   const person: Person = { name: user.name, phone: user.phone, birth: user.birth, sex: user.sex };
   const partner = couple ? validPerson(req.partner, '동반자') : undefined;
-  const start = /^\d{2}:\d{2}$/.test(req.time) ? toMin(req.time) : -1;
-  if (!candidateStarts(req.date, totalSlots(products, couple)).includes(start)) throw new BookingError('예약할 수 없는 시간입니다.');
+  const plans = plansOf(req, products, couple);
+
+  for (const pl of plans) {
+    if (!isValidDate(pl.date) || !isBookableDate(pl.date)) throw new BookingError(`${pl.product.name}: 예약할 수 없는 날짜입니다.`);
+    if (!candidateStarts(pl.date, pl.slots).includes(pl.start)) throw new BookingError(`${pl.product.name}: 예약할 수 없는 시간입니다.`);
+  }
+  // 같은 날 두 검사를 같은 시간에 받을 수는 없다
+  for (let i = 0; i < plans.length; i++) {
+    for (let j = i + 1; j < plans.length; j++) {
+      const x = plans[i], y = plans[j];
+      if (x.date === y.date && overlaps(x.start, x.slots, y.start, y.slots)) {
+        throw new BookingError(`${x.product.name}과(와) ${y.product.name}의 시간이 겹칩니다. 시간을 다시 선택해 주세요.`);
+      }
+    }
+  }
 
   const survey = {
     metalImplant: Boolean(req.survey?.metalImplant),
@@ -105,21 +151,20 @@ export async function createBooking(req: BookingRequest, user: User): Promise<Bo
   };
 
   // 빠른 실패: 이미 찬 시간이면 바로 안내 (최종 판단은 저장소의 원자적 insert가 한다)
-  if (!fits(products, couple, start, await takenSlots(req.date))) throw new BookingError(TAKEN_MSG, 409);
+  const takenByDate = new Map<string, Map<string, Set<number>>>();
+  for (const pl of plans) {
+    if (!takenByDate.has(pl.date)) takenByDate.set(pl.date, await takenSlots(pl.date));
+    const taken = takenByDate.get(pl.date)!.get(pl.product.kind);
+    if (segmentSlotStarts(pl).some(t => taken?.has(t))) throw new BookingError(`${pl.product.name}: ${TAKEN_MSG}`, 409);
+  }
 
-  const segments = buildSegments(products, couple, start);
   const prices = itemPrices(products, couple);
-  const items: BookingItem[] = segments.map(seg => {
-    const p = products.find(x => x.id === seg.planId)!;
-    return { planId: p.id, planName: p.name, resource: seg.resource, start: toHHMM(seg.start), slots: seg.slots, price: priceOf(p, couple) };
-  });
-  const listPrice = prices.reduce((n, it) => n + it.price, 0);
-
-  let coupon: { code: string; discount: number } | null = null;
+  let coupon: { code: string; discount: number; shares: number[] } | null = null;
   if (req.couponCode && String(req.couponCode).trim()) {
     try {
       const c = await checkCoupon(req.couponCode, user.id, prices);
-      coupon = { code: c.coupon.code, discount: c.discount };
+      const only = c.coupon.productId ? products.findIndex(p => p.id === c.coupon.productId) : -1;
+      coupon = { code: c.coupon.code, discount: c.discount, shares: splitDiscount(prices.map(p => p.price), c.discount, only) };
     } catch (e) {
       if (e instanceof CouponError) throw new BookingError(e.message, e.status);
       throw e;
@@ -130,31 +175,40 @@ export async function createBooking(req: BookingRequest, user: User): Promise<Bo
 
   try {
     for (let attempt = 0; attempt < 3; attempt++) {
-      const booking: Booking = {
-        code: newCode(),
-        userId: user.id,
-        planId: items[0].planId,
-        planName: items.map(it => it.planName).join(' + '),
-        resource: items[0].resource,
-        date: req.date,
-        time: toHHMM(start),
-        slots: totalSlots(products, couple),
-        couple,
-        items,
-        person,
-        partner,
-        survey,
-        listPrice,
-        price: listPrice - (coupon?.discount ?? 0),
-        ...(coupon ? { couponCode: coupon.code, discount: coupon.discount } : {}),
-        status: 'confirmed',
-        createdAt: new Date().toISOString(),
-      };
-      const extra = coupon ? [await redemptionStmt(coupon.code, user.id, booking.code, coupon.discount)] : [];
+      const codes = plans.map(() => newCode());
+      if (new Set(codes).size < codes.length) continue;
+      const groupCode = plans.length > 1 ? codes[0] : undefined;
+      const createdAt = new Date().toISOString();
+      const list: Booking[] = plans.map((pl, i) => {
+        const listPrice = prices[i].price;
+        const share = coupon?.shares[i] ?? 0;
+        return {
+          code: codes[i],
+          userId: user.id,
+          ...(groupCode ? { groupCode } : {}),
+          planId: pl.product.id,
+          planName: pl.product.name,
+          resource: pl.product.kind,
+          date: pl.date,
+          time: toHHMM(pl.start),
+          slots: pl.slots,
+          couple,
+          person,
+          partner,
+          survey,
+          listPrice,
+          price: listPrice - share,
+          ...(coupon && share > 0 ? { couponCode: coupon.code, discount: share } : {}),
+          status: 'confirmed',
+          createdAt,
+        };
+      });
+      // 쿠폰 사용 기록은 묶음 대표 예약번호로 한 건만 남긴다
+      const extra = coupon ? [await redemptionStmt(coupon.code, user.id, groupCode ?? codes[0], coupon.discount)] : [];
       try {
-        await insert(booking, extra);
+        await insertMany(list, extra);
         coupon = null; // 성공 — 되돌리지 않는다
-        return booking;
+        return list;
       } catch (e) {
         if (e instanceof SlotConflictError) throw new BookingError(TAKEN_MSG, 409);
         if (e instanceof CouponUsedError) throw new BookingError('이미 사용한 쿠폰입니다.');
@@ -184,8 +238,13 @@ export async function cancelMyBooking(user: User, code: string): Promise<Booking
   if (b.status === 'cancelled') throw new BookingError('이미 취소된 예약입니다.');
   if (!canCancel(b.date)) throw new BookingError('검진 2일 전부터는 온라인 취소가 어렵습니다. 상담 전화로 문의해 주세요.');
   const updated: Booking = { ...b, status: 'cancelled', cancelledAt: new Date().toISOString() };
-  // 쿠폰을 썼다면 다시 쓸 수 있게 되돌린다
-  await saveCancelled(updated, b.couponCode ? await restoreStmts(b.code, b.couponCode) : []);
+  // 쿠폰을 썼다면 다시 쓸 수 있게 되돌린다 — 묶음 예약은 쿠폰 할인을 받은 예약이 모두 취소됐을 때만
+  let restore = Boolean(b.couponCode);
+  if (restore && b.groupCode) {
+    const others = (await listGroup(b.groupCode)).filter(x => x.code !== b.code && x.status === 'confirmed' && x.couponCode);
+    restore = others.length === 0;
+  }
+  await saveCancelled(updated, restore ? await restoreStmts(b.groupCode ?? b.code, b.couponCode!) : []);
   return updated;
 }
 
@@ -193,7 +252,7 @@ export async function listBookings(): Promise<Booking[]> {
   return listAll();
 }
 
-// 예약에 표시할 상품명 (예약 당시 이름 우선, 여러 상품이면 " + "로 연결)
+// 예약에 표시할 상품명 (예약 당시 이름 우선)
 export async function planNameOf(b: Booking): Promise<string> {
   if (b.planName) return b.planName;
   const p = (await listProducts({ includeInactive: true })).find(x => x.id === b.planId);
