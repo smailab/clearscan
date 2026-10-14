@@ -5,7 +5,7 @@ import { SignupForm } from '@/components/auth/AuthForms';
 import { currentUser } from '@/lib/auth/members';
 import { safeNext } from '@/lib/auth/http';
 
-export const metadata: Metadata = { title: '회원가입 | Scan Longevity', robots: { index: false } };
+export const metadata: Metadata = { title: '회원가입 | THOR SCAN LONGEVITY', robots: { index: false } };
 
 export default async function SignupPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const next = safeNext((await searchParams).next, '/booking');

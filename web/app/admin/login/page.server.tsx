@@ -5,7 +5,7 @@ import Logo from '@/components/Logo';
 import { currentAdmin } from '@/lib/auth/admins';
 import { safeNext } from '@/lib/auth/http';
 
-export const metadata: Metadata = { title: '관리자 로그인 | Scan Longevity', robots: { index: false } };
+export const metadata: Metadata = { title: '관리자 로그인 | THOR SCAN LONGEVITY', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
 export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {

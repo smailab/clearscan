@@ -25,10 +25,10 @@ export async function sendVerificationEmail(to: string, code: string): Promise<S
       body: JSON.stringify({
         from,
         to,
-        subject: `[Scan Longevity] 이메일 인증번호 ${code}`,
-        text: `Scan Longevity 회원가입 이메일 인증번호는 ${code} 입니다.\n10분 안에 입력해 주세요.\n\n본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.`,
+        subject: `[THOR SCAN LONGEVITY] 이메일 인증번호 ${code}`,
+        text: `THOR SCAN LONGEVITY 회원가입 이메일 인증번호는 ${code} 입니다.\n10분 안에 입력해 주세요.\n\n본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.`,
         html: `<div style="font-family:sans-serif;font-size:15px;line-height:1.6">
-          <p>Scan Longevity 회원가입 이메일 인증번호입니다.</p>
+          <p>THOR SCAN LONGEVITY 회원가입 이메일 인증번호입니다.</p>
           <p style="font-size:28px;font-weight:800;letter-spacing:6px;margin:16px 0">${code}</p>
           <p>10분 안에 입력해 주세요. 본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.</p></div>`,
       }),

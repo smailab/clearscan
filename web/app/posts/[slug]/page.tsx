@@ -12,8 +12,8 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const p = await getPostBySlug((await params).slug);
-  if (!p) return { title: '건강 칼럼 | Scan Longevity' };
-  return { title: `${p.title} | Scan Longevity`, description: p.summary, openGraph: { title: p.title, description: p.summary, images: p.coverImage ? [p.coverImage] : [] } };
+  if (!p) return { title: '건강 칼럼 | THOR SCAN LONGEVITY' };
+  return { title: `${p.title} | THOR SCAN LONGEVITY`, description: p.summary, openGraph: { title: p.title, description: p.summary, images: p.coverImage ? [p.coverImage] : [] } };
 }
 
 export default async function PostPage({ params, searchParams }: Params) {

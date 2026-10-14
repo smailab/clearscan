@@ -8,7 +8,7 @@ import { listProducts, toPublic } from '@/lib/products';
 import { myCoupons } from '@/lib/coupons';
 
 export const metadata: Metadata = {
-  title: '검진 예약 | Scan Longevity',
+  title: '검진 예약 | THOR SCAN LONGEVITY',
   description: '원하는 검진 상품과 날짜·시간을 골라 예약하세요.',
 };
 export const dynamic = 'force-dynamic';
