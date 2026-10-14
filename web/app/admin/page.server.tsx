@@ -7,7 +7,7 @@ import { formatDateKo, formatPhone, getPlan, kstToday } from '@/lib/booking/sche
 import { listUsers } from '@/lib/auth/members';
 import { won } from '@/lib/data';
 import { AdminLogout, AdminRowActions, ChangePasswordForm, NewAdminForm } from '@/components/admin/AdminParts';
-import ResultEditor from '@/components/booking/ResultEditor';
+import BookingResultRow from '@/components/booking/ResultEditor';
 
 export const metadata: Metadata = { title: '관리자 | Scan Longevity', robots: { index: false } };
 export const dynamic = 'force-dynamic';
@@ -66,24 +66,26 @@ async function Bookings({ all }: { all: boolean }) {
               const flags = [b.survey.metalImplant && '금속', b.survey.claustrophobia && '폐소', b.survey.pregnant && '임신'].filter(Boolean);
               const r = results.get(b.code);
               return (
-                <tr key={b.code} className={b.status === 'cancelled' ? 'cancelled' : ''}>
-                  <td>{formatDateKo(b.date)}<br /><b>{b.time}</b><br /><code>{b.code}</code></td>
-                  <td>{getPlan(b.planId)?.name}{b.couple && <><br /><small>커플</small></>}</td>
-                  <td>{b.person.name}{b.partner && <><br /><small>+ {b.partner.name}</small></>}{!b.userId && <><br /><small>(비회원)</small></>}</td>
-                  <td>{formatPhone(b.person.phone)}{b.partner && <><br /><small>{formatPhone(b.partner.phone)}</small></>}</td>
-                  <td>{b.person.birth} / {b.person.sex === 'F' ? '여' : '남'}</td>
-                  <td>{flags.length ? <span className="warn">{flags.join(' · ')}</span> : '-'}{b.survey.memo && <><br /><small>{b.survey.memo}</small></>}</td>
-                  <td>{won(b.price)}</td>
-                  <td>{b.status === 'confirmed' ? '확정' : '취소'}</td>
-                  <td>
-                    {b.status === 'confirmed' && b.userId
-                      ? <>
-                          <ResultEditor code={b.code} initial={r ? { status: r.status, summary: r.summary, findings: r.findings, recommendation: r.recommendation, published: r.published } : null} />
-                          {r?.updatedBy && <small className="admin-msg">{r.updatedBy} · {new Date(r.updatedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</small>}
-                        </>
-                      : <small>-</small>}
-                  </td>
-                </tr>
+                <BookingResultRow
+                  key={b.code}
+                  code={b.code}
+                  colSpan={9}
+                  rowClassName={b.status === 'cancelled' ? 'cancelled' : ''}
+                  editable={b.status === 'confirmed' && Boolean(b.userId)}
+                  initial={r ? { status: r.status, summary: r.summary, findings: r.findings, recommendation: r.recommendation, published: r.published } : null}
+                  meta={r?.updatedBy ? `${r.updatedBy} · ${new Date(r.updatedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}` : undefined}
+                  summaryLabel={`${formatDateKo(b.date)} ${b.time} · ${getPlan(b.planId)?.name ?? ''} · ${b.person.name}`}
+                  cells={<>
+                      <td>{formatDateKo(b.date)}<br /><b>{b.time}</b><br /><code>{b.code}</code></td>
+                      <td>{getPlan(b.planId)?.name}{b.couple && <><br /><small>커플</small></>}</td>
+                      <td>{b.person.name}{b.partner && <><br /><small>+ {b.partner.name}</small></>}{!b.userId && <><br /><small>(비회원)</small></>}</td>
+                      <td>{formatPhone(b.person.phone)}{b.partner && <><br /><small>{formatPhone(b.partner.phone)}</small></>}</td>
+                      <td>{b.person.birth} / {b.person.sex === 'F' ? '여' : '남'}</td>
+                      <td>{flags.length ? <span className="warn">{flags.join(' · ')}</span> : '-'}{b.survey.memo && <><br /><small>{b.survey.memo}</small></>}</td>
+                      <td>{won(b.price)}</td>
+                      <td>{b.status === 'confirmed' ? '확정' : '취소'}</td>
+                      </>}
+                />
               );
             })}
           </tbody>
