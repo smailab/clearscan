@@ -3,6 +3,7 @@ import Shell from '@/components/Shell';
 import CenterList from '@/components/center/CenterList';
 
 export const metadata: Metadata = { title: '검진 센터 | Scan Longevity' };
+export const dynamic = 'force-dynamic';
 
 export default function CentersPage() {
   return (

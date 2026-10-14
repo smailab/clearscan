@@ -242,3 +242,31 @@
 .cb-ask.danger .cb-ok { background: #d93036; }
 .cb-input { font: inherit; font-size: 14px; border: 1.5px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 .my-booking .actions .cb-ask { max-width: 100%; }
+
+/* ---------- 관리자: 검진 센터 ---------- */
+.ce-h { font-size: 14px; font-weight: 800; color: var(--navy); margin-top: 4px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.ce-h em, .ce-em { font-style: normal; font-weight: 400; color: var(--text-3); font-size: 12px; }
+.ce-hours { display: flex; flex-direction: column; gap: 6px; }
+.ce-hour { display: grid; grid-template-columns: 110px 1fr 1.3fr; gap: 6px; }
+@media (max-width: 760px) { .ce-hour { grid-template-columns: 1fr; } }
+.pe-images button { position: relative; }
+.ce-num { position: absolute; right: 3px; top: 3px; background: var(--primary); color: #fff; font-style: normal; font-size: 11px; font-weight: 800; border-radius: 999px; min-width: 18px; height: 18px; display: grid; place-items: center; }
+.ce-plans > span { font-size: 13px; font-weight: 700; display: block; margin-bottom: 8px; }
+.ce-plans > div { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.ce-plans .re-pub { font-size: 13.5px !important; font-weight: 500 !important; }
+.ce-doctors { display: flex; flex-direction: column; gap: 10px; }
+.ce-doctor { display: grid; grid-template-columns: 96px 1fr auto; gap: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: var(--surface-2); }
+.ce-doc-photo { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.ce-doc-photo img, .ce-doc-photo > span { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; object-position: 50% 10%; background: #e4e8ef; display: grid; place-items: center; font-weight: 800; font-size: 22px; color: var(--primary); }
+.ce-doc-photo select { font-size: 12px !important; padding: 4px 6px !important; width: 96px; }
+.ce-doc-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ce-doc-row { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 6px; }
+.ce-doc-row.three { grid-template-columns: 1fr 1fr 1fr; }
+.ce-doc-row textarea { min-height: 84px !important; font-size: 12.5px !important; }
+@media (max-width: 860px) { .ce-doctor { grid-template-columns: 1fr; } .ce-doc-row, .ce-doc-row.three { grid-template-columns: 1fr; } }
+.ce-doc-actions { display: flex; flex-direction: column; gap: 4px; }
+.ce-doc-actions button { font-size: 12px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; background: #fff; min-height: 28px; }
+.ce-doc-actions button.danger { color: #d93036; border-color: #f3c4c6; }
+.ce-doc-actions button:disabled { opacity: .35; }
+.ce-add { min-height: 56px; }
+.ce-view { font-size: 12px; border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; color: var(--text-2); }

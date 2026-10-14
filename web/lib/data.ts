@@ -2,7 +2,7 @@ export const site = {
   name: 'Scan Longevity',
   tagline: '전신 MRI 정밀 검진',
   notice: '신규 오픈 기념 — 첫 검진 예약 시 결과 상담 무료',
-  phone: '070-5236-1099', // Scan Longevity 상담 전화 (검진 센터 번호는 centers[].phone)
+  phone: '070-5236-1099', // Scan Longevity 상담 전화 (검진 센터 번호는 각 센터 정보에)
   clinic: '이로영상의학과의원',
   address: '서울특별시 서대문구 신촌로37길 10, 7층 701호',
   addressDetail: '(북아현동, 아현메디컬)',
@@ -72,107 +72,6 @@ export const faqs = [
   { q: '예약 변경이나 취소가 가능한가요?', a: '검진 2일 전까지는 앱에서 무료로 변경·취소할 수 있습니다.' },
 ];
 
-export type Doctor = {
-  name: string;
-  title: string;
-  specialty?: string;
-  education?: string[];
-  career?: string[];
-  societies?: string[];
-  photo?: string;
-};
-
-export type Center = {
-  id: string;
-  name: string;
-  region: string;
-  address: string;
-  addressDetail: string;
-  phone: string;
-  homepage?: string; // 비어 있으면 '준비 중'으로 표시
-  links?: { label: string; url: string }[];
-  hours: { label: string; value: string; note?: string }[];
-  notice?: string;
-  image: string;
-  gallery: string[];
-  equipment: string[];
-  highlights: string[];
-  planIds: string[];
-  intro: string;
-  doctors: Doctor[];
-};
-
-// 검진 센터 목록 — 센터가 늘어나면 항목만 추가하면 된다
-// 출처: 이로영상의학과 홈페이지 (iroclinic.com, 2026-10-14 확인)
-export const centers: Center[] = [
-  {
-    id: 'iro',
-    name: '이로영상의학과의원',
-    region: '서울 서대문구',
-    address: '서울특별시 서대문구 신촌로37길 10, 7층 701호',
-    addressDetail: '(북아현동, 아현메디컬)',
-    phone: '02-393-0010',
-    homepage: 'https://www.iroclinic.com',
-    links: [
-      { label: '네이버 예약', url: 'https://m.booking.naver.com/booking/13/bizes/1363743' },
-      { label: '유튜브', url: 'https://www.youtube.com/@%EC%9D%B4%EB%A1%9C%EC%98%81%EC%83%81%EC%9D%98%ED%95%99%EA%B3%BC' },
-      { label: '인스타그램', url: 'https://www.instagram.com/iroclinic_official/' },
-      { label: '블로그', url: 'https://blog.naver.com/rakqzj2891' },
-    ],
-    hours: [
-      { label: '평일', value: '08:30 – 17:30', note: '점심시간 12:00 – 13:00' },
-      { label: '토요일', value: '08:30 – 12:30', note: '점심시간 없이 12:00 접수 마감' },
-      { label: '일요일', value: '휴진' },
-    ],
-    notice: '투석 혈관 시술은 365일 응급 대기로 당일 시술이 가능합니다.',
-    image: '/images/centers/iro/interior1.png',
-    gallery: [1, 2, 3, 4, 5, 6, 7].map(n => `/images/centers/iro/interior${n}.png`),
-    // MRI·CT는 Scan Longevity 검진용 장비 (병원 홈페이지에는 미기재)
-    equipment: ['MRI (자기공명영상)', 'CT (컴퓨터단층촬영)', '혈관조영장비 (Philips Azurion)', 'X-ray', '초음파'],
-    highlights: ['영상의학과·혈관외과 전문의 협진', '대학병원 교수 출신 전문의 4인', '서울대학교병원·세브란스병원 협력 의료기관', '당일 예약·당일 시술'],
-    planIds: ['annual', 'spine', 'neuro', 'heart-ct', 'lung-ct'],
-    intro: '영상의학과 인터벤션 전문의 3인과 혈관외과 전문의 1인이 함께 진료하는 영상의학과입니다. 대학병원급 혈관조영장비로 진단부터 시술까지 하루 안에 진행하며, 투석혈관·말초혈관·정맥류 등 혈관 질환 치료에 집중하고 있습니다.',
-    doctors: [
-      {
-        name: '김준곤', photo: '/images/centers/iro/doctor1.png', title: '대표원장', specialty: '영상의학과 인터벤션 전문의',
-        education: ['성균관대학교 의과대학 석사, 박사', '연세대학교 원주의과대학 졸업', 'KAIST 전기전자공학과'],
-        career: ['전) 삼성서울병원 영상의학과 조교수', '전) 삼성서울병원 인터벤션 전임의', '전) 서울지구병원 영상의학과 과장'],
-        societies: ['대한영상의학회', '대한인터벤션영상의학회', '대한투석혈관학회', 'SIR 북미인터벤션영상의학회', 'CIRSE 유럽인터벤션학회'],
-      },
-      {
-        name: '임재현', photo: '/images/centers/iro/doctor2.png', title: '대표원장', specialty: '영상의학과 인터벤션 전문의',
-        education: ['성균관대학교 의과대학 석사', '연세대학교 원주의과대학'],
-        career: ['현) 삼성서울병원 영상의학과 외래교수', '전) 분당차병원 영상의학과 임상조교수', '전) 삼성서울병원 인터벤션 전임의'],
-        societies: ['대한영상의학회', '대한인터벤션영상의학회', '대한투석혈관학회', 'SIR 북미인터벤션영상의학회'],
-      },
-      {
-        name: '문성모', photo: '/images/centers/iro/doctor3.png', title: '원장', specialty: '영상의학과 인터벤션 전문의',
-        education: ['차의과대학교 의학전문대학원', '분당차병원 영상의학과 전공의'],
-        career: ['전) 세브란스병원 영상의학과 외래교수', '전) 해운대백병원 영상의학과 인터벤션 진료교수', '전) 세브란스병원 영상의학과 인터벤션 영상조교수', '전) 세브란스병원 영상의학과 인터벤션 전임의'],
-        societies: ['인터벤션 시술인증의', '대한인터벤션영상의학회', '대한투석혈관학회', 'SIR 북미인터벤션영상의학회', 'CIRSE 유럽인터벤션학회'],
-      },
-      {
-        name: '이승훈', photo: '/images/centers/iro/doctor4.png', title: '원장', specialty: '혈관외과 전문의',
-        education: ['가톨릭대학교 의과대학 졸업', '가톨릭중앙의료원 외과 전공의'],
-        career: ['현) 서울성모병원 혈관이식외과 외래교수', '전) 세이브외과 원장', '전) 서울성모병원 혈관이식외과 임상강사'],
-        societies: ['대한혈관외과학회', '대한투석혈관학회', '대한이식학회', 'Society for Vascular Surgery', 'Vascular & Endovascular Surgery Society'],
-      },
-    ],
-  },
-];
-
-export function getCenter(id: string): Center | undefined {
-  return centers.find(c => c.id === id);
-}
-
-export const mapLinks = (c: Center) => {
-  const q = encodeURIComponent(c.name);
-  const addr = encodeURIComponent(c.address);
-  return {
-    naver: `https://map.naver.com/p/search/${q}`,
-    kakao: `https://map.kakao.com/?q=${addr}`,
-    google: `https://www.google.com/maps/search/?api=1&query=${addr}`,
-  };
-};
+// 검진 센터 정보는 DB(centers)로 이동 — lib/centers.ts, lib/centers-shared.ts
 
 export const won = (n: number) => n.toLocaleString('ko-KR');

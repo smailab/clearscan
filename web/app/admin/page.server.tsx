@@ -8,6 +8,8 @@ import { listProducts, productNames } from '@/lib/products';
 import { describeDiscount, listCoupons } from '@/lib/coupons';
 import { NewProductBox, ProductRow } from '@/components/admin/ProductEditor';
 import { CouponToggle, IssueCouponBox } from '@/components/admin/CouponParts';
+import { CenterRow, NewCenterBox } from '@/components/admin/CenterEditor';
+import { listCenters } from '@/lib/centers';
 import { listUsers } from '@/lib/auth/members';
 import { won } from '@/lib/data';
 import { AdminLogout, AdminRowActions, ChangePasswordForm, NewAdminForm } from '@/components/admin/AdminParts';
@@ -37,6 +39,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <a href="/admin" className={tab === 'bookings' ? 'on' : ''}>예약 · 검사 결과</a>
         <a href="/admin?tab=products" className={tab === 'products' ? 'on' : ''}>상품 관리</a>
         <a href="/admin?tab=coupons" className={tab === 'coupons' ? 'on' : ''}>쿠폰</a>
+        <a href="/admin?tab=centers" className={tab === 'centers' ? 'on' : ''}>검진 센터</a>
         <a href="/admin?tab=members" className={tab === 'members' ? 'on' : ''}>회원 관리</a>
         {admin.role === 'owner' && <a href="/admin?tab=admins" className={tab === 'admins' ? 'on' : ''}>관리자 계정</a>}
         <a href="/admin?tab=account" className={tab === 'account' ? 'on' : ''}>내 계정</a>
@@ -44,6 +47,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {tab === 'members' ? <Members q={q} />
         : tab === 'products' ? <Products owner={admin.role === 'owner'} />
         : tab === 'coupons' ? <Coupons />
+        : tab === 'centers' ? <Centers owner={admin.role === 'owner'} />
         : tab === 'admins' && admin.role === 'owner' ? <Admins me={admin} />
         : tab === 'account' ? <ChangePasswordForm />
         : <Bookings all={all === '1'} />}
@@ -235,6 +239,38 @@ async function Coupons() {
           </tbody>
         </table>
       </div>
+    </>
+  );
+}
+
+async function Centers({ owner }: { owner: boolean }) {
+  const [centers, products] = await Promise.all([listCenters({ includeInactive: true }), listProducts({ includeInactive: true })]);
+  const productOptions = products.map(p => ({ id: p.id, name: p.name + (p.active ? '' : ' (판매 중지)') }));
+  return (
+    <>
+      <div className="admin-bar">
+        <p className="admin-stat">검진 센터 {centers.length}곳 · 공개 {centers.filter(c => c.active).length}곳 — 수정하면 홈·센터 페이지에 바로 반영됩니다. 잠시 숨기려면 &lsquo;공개&rsquo;를 끄세요.</p>
+      </div>
+      <div className="admin-table">
+        <table>
+          <thead>
+            <tr><th>순서</th><th>사진</th><th>센터</th><th>주소·전화</th><th>의료진</th><th>검진 상품</th><th>상태</th><th>관리</th></tr>
+          </thead>
+          <tbody>
+            {centers.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', padding: 32 }}>등록된 센터가 없습니다.</td></tr>}
+            {centers.map(c => (
+              <CenterRow
+                key={c.id}
+                c={c}
+                canDelete={owner}
+                products={productOptions}
+                meta={c.updatedBy ? `${c.updatedBy} · ${new Date(c.updatedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}` : undefined}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <NewCenterBox products={productOptions} />
     </>
   );
 }

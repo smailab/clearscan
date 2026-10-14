@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import type { Center } from '@/lib/data';
+import type { Center } from '@/lib/centers-shared';
 import { dayOfWeek, kstToday } from '@/lib/booking/schedule';
 
 // 사진 갤러리: 스와이프/스크롤 + 좌우 버튼 + 1/N 표시

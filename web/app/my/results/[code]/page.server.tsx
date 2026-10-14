@@ -6,7 +6,8 @@ import { currentUser } from '@/lib/auth/members';
 import { RESULT_STATUS, resultByCode } from '@/lib/booking/results';
 import { formatDateKo } from '@/lib/booking/schedule';
 import { BookingError, myBooking, planNameOf } from '@/lib/booking/service';
-import { centers, site } from '@/lib/data';
+import { site } from '@/lib/data';
+import { listCenters } from '@/lib/centers';
 
 export const metadata: Metadata = { title: '검사 결과 | Scan Longevity', robots: { index: false } };
 export const dynamic = 'force-dynamic';
@@ -28,7 +29,7 @@ export default async function ResultPage({ params }: { params: Promise<{ code: s
   if (!result || !result.published || result.userId !== user.id) notFound();
 
   const s = RESULT_STATUS[result.status];
-  const planName = await planNameOf(booking);
+  const [planName, centers] = await Promise.all([planNameOf(booking), listCenters()]);
 
   return (
     <Shell heroHeader={false} back="/my">

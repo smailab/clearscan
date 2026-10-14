@@ -5,7 +5,9 @@ import { notFound } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { CopyButton, Gallery, Hours, SectionTabs } from '@/components/center/CenterParts';
 import { Chevron } from '@/components/icons';
-import { getCenter, mapLinks, won } from '@/lib/data';
+import { won } from '@/lib/data';
+import { getCenter } from '@/lib/centers';
+import { mapLinks, specialtiesOf } from '@/lib/centers-shared';
 import { listProducts } from '@/lib/products';
 import { currentUser } from '@/lib/auth/members';
 import { getPricing } from '@/lib/pricing';
@@ -16,7 +18,7 @@ type Params = { params: Promise<{ id: string }> };
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const c = getCenter((await params).id);
+  const c = await getCenter((await params).id);
   if (!c) return {};
   return {
     title: `${c.name} | Scan Longevity 검진 센터`,
@@ -31,14 +33,14 @@ const TABS = [
 ];
 
 export default async function CenterPage({ params }: Params) {
-  const c = getCenter((await params).id);
+  const c = await getCenter((await params).id);
   if (!c) notFound();
 
   const prices = (await currentUser()) ? (await getPricing()).prices : null;
   const links = mapLinks(c);
   const centerPlans = (await listProducts()).filter(p => c.planIds.includes(p.id));
   const fullAddress = `${c.address} ${c.addressDetail}`;
-  const specialties = [...new Set(c.doctors.map(d => d.specialty?.split(' ')[0]).filter(Boolean))] as string[];
+  const specialties = specialtiesOf(c);
 
   return (
     <Shell heroHeader={false} cta={false} back="/centers">

@@ -1,9 +1,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { centers } from '@/lib/data';
+import { listCenters } from '@/lib/centers';
+import { specialtiesOf } from '@/lib/centers-shared';
 import { Chevron } from '../icons';
 
-export default function CenterList() {
+// 공개 중인 검진 센터 목록 (DB)
+export default async function CenterList() {
+  const centers = await listCenters();
+  if (!centers.length) return <p className="bk-empty">등록된 검진 센터가 없습니다.</p>;
   return (
     <ul className="ct-list">
       {centers.map(c => (
@@ -14,8 +18,8 @@ export default function CenterList() {
               <p className="nm">{c.name}</p>
               <p className="addr">{c.address}</p>
               <p className="tags">
-                <span className="dist">{c.region}</span>
-                {[...new Set(c.doctors.map(d => d.specialty?.split(' ')[0]).filter(Boolean))].map(s => <span key={s} className="eq">{s}</span>)}
+                {c.region && <span className="dist">{c.region}</span>}
+                {specialtiesOf(c).map(s => <span key={s} className="eq">{s}</span>)}
               </p>
             </div>
             <Chevron className="chev" />
