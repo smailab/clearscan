@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { site } from '@/lib/data';
+import Logo from './Logo';
 
 // 히어로 위에서는 파란 배경, 스크롤하면 흰 배경으로 전환. back이 있으면 뒤로가기 버튼을 보여준다
 export default function Header({ solid = false, back }: { solid?: boolean; back?: string }) {
@@ -37,9 +38,8 @@ export default function Header({ solid = false, back }: { solid?: boolean; back?
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M15 5 8 12l7 7" /></svg>
           </button>
         )}
-        <Link className="logo" href="/">
-          <span className="logo-mark" />
-          {site.name}
+        <Link className="logo" href="/" aria-label={site.name}>
+          <Logo size={30} />
         </Link>
       </div>
       <div className="header-right">

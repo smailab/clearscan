@@ -12,7 +12,7 @@ import { myBookings } from '@/lib/booking/service';
 import { site, won } from '@/lib/data';
 import type { Booking } from '@/lib/booking/types';
 
-export const metadata: Metadata = { title: '내 페이지 | 클리어스캔', robots: { index: false } };
+export const metadata: Metadata = { title: '내 페이지 | Scan Longevity', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
 export default async function MyPage() {

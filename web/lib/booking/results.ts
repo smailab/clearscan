@@ -18,15 +18,16 @@ export type ExamResult = {
   recommendation: string;
   published: boolean;
   updatedAt: string;
+  updatedBy: string | null; // 마지막으로 수정한 관리자 이름
 };
 
 type Row = {
   booking_code: string; user_id: string; status: ResultStatus; summary: string; findings: string;
-  recommendation: string; published: number; updated_at: string;
+  recommendation: string; published: number; updated_at: string; updated_by: string | null;
 };
 const toResult = (r: Row): ExamResult => ({
   bookingCode: r.booking_code, userId: r.user_id, status: r.status, summary: r.summary, findings: r.findings,
-  recommendation: r.recommendation, published: Boolean(r.published), updatedAt: r.updated_at,
+  recommendation: r.recommendation, published: Boolean(r.published), updatedAt: r.updated_at, updatedBy: r.updated_by,
 });
 
 export async function resultsByUser(userId: string, publishedOnly = true): Promise<ExamResult[]> {
@@ -52,10 +53,10 @@ export async function allResults(): Promise<Map<string, ExamResult>> {
 export async function saveResult(r: Omit<ExamResult, 'updatedAt'>): Promise<void> {
   const db = await getDB();
   await db.prepare(
-    `INSERT INTO results (booking_code, user_id, status, summary, findings, recommendation, published, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO results (booking_code, user_id, status, summary, findings, recommendation, published, updated_at, updated_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(booking_code) DO UPDATE SET status = excluded.status, summary = excluded.summary,
        findings = excluded.findings, recommendation = excluded.recommendation,
-       published = excluded.published, updated_at = excluded.updated_at`,
-  ).bind(r.bookingCode, r.userId, r.status, r.summary, r.findings, r.recommendation, r.published ? 1 : 0, new Date().toISOString()).run();
+       published = excluded.published, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
+  ).bind(r.bookingCode, r.userId, r.status, r.summary, r.findings, r.recommendation, r.published ? 1 : 0, new Date().toISOString(), r.updatedBy).run();
 }

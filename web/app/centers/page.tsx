@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Shell from '@/components/Shell';
 import CenterList from '@/components/center/CenterList';
 
-export const metadata: Metadata = { title: '검진 센터 | 클리어스캔' };
+export const metadata: Metadata = { title: '검진 센터 | Scan Longevity' };
 
 export default function CentersPage() {
   return (

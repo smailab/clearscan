@@ -8,7 +8,7 @@ import { formatDateKo, getPlan } from '@/lib/booking/schedule';
 import { BookingError, myBooking } from '@/lib/booking/service';
 import { centers, site } from '@/lib/data';
 
-export const metadata: Metadata = { title: '검사 결과 | 클리어스캔', robots: { index: false } };
+export const metadata: Metadata = { title: '검사 결과 | Scan Longevity', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
 export default async function ResultPage({ params }: { params: Promise<{ code: string }> }) {

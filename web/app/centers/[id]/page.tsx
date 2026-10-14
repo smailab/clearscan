@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const c = getCenter((await params).id);
   if (!c) return {};
   return {
-    title: `${c.name} | 클리어스캔 검진 센터`,
+    title: `${c.name} | Scan Longevity 검진 센터`,
     description: `${c.region} ${c.name} — ${c.intro}`,
   };
 }

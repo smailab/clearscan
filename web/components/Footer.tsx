@@ -1,10 +1,11 @@
 import { site } from '@/lib/data';
+import Logo from './Logo';
 
 export default function Footer() {
   return (
     <footer className="footer">
       <div className="top">
-        <span className="flogo"><span className="logo-mark" />{site.name}</span>
+        <span className="flogo" aria-label={site.name}><Logo size={30} /></span>
         <a className="partner" href={`tel:${site.phone}`}>기업 검진 문의</a>
       </div>
       <h5>고객센터</h5>

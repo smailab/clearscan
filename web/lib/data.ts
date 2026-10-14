@@ -1,8 +1,8 @@
 export const site = {
-  name: '클리어스캔',
+  name: 'Scan Longevity',
   tagline: '전신 MRI 정밀 검진',
   notice: '신규 오픈 기념 — 첫 검진 예약 시 결과 상담 무료',
-  phone: '070-5236-1099', // 클리어스캔 상담 전화 (검진 센터 번호는 centers[].phone)
+  phone: '070-5236-1099', // Scan Longevity 상담 전화 (검진 센터 번호는 centers[].phone)
   clinic: '이로영상의학과의원',
   address: '서울특별시 서대문구 신촌로37길 10, 7층 701호',
   addressDetail: '(북아현동, 아현메디컬)',
@@ -187,7 +187,7 @@ export const centers: Center[] = [
     notice: '투석 혈관 시술은 365일 응급 대기로 당일 시술이 가능합니다.',
     image: '/images/centers/iro/interior1.png',
     gallery: [1, 2, 3, 4, 5, 6, 7].map(n => `/images/centers/iro/interior${n}.png`),
-    // MRI·CT는 클리어스캔 검진용 장비 (병원 홈페이지에는 미기재)
+    // MRI·CT는 Scan Longevity 검진용 장비 (병원 홈페이지에는 미기재)
     equipment: ['MRI (자기공명영상)', 'CT (컴퓨터단층촬영)', '혈관조영장비 (Philips Azurion)', 'X-ray', '초음파'],
     highlights: ['영상의학과·혈관외과 전문의 협진', '대학병원 교수 출신 전문의 4인', '서울대학교병원·세브란스병원 협력 의료기관', '당일 예약·당일 시술'],
     planIds: ['annual', 'spine', 'neuro', 'heart-ct', 'lung-ct'],

@@ -1,23 +1,22 @@
 import type { Metadata } from 'next';
-import { adminToken, isAdmin } from '@/lib/booking/admin';
+import { redirect } from 'next/navigation';
+import { currentAdmin, listAdmins, type Admin } from '@/lib/auth/admins';
 import { listBookings } from '@/lib/booking/service';
 import { allResults } from '@/lib/booking/results';
 import { formatDateKo, formatPhone, getPlan, kstToday } from '@/lib/booking/schedule';
 import { listUsers } from '@/lib/auth/members';
 import { won } from '@/lib/data';
-import AdminLogin, { AdminLogout } from '@/components/booking/AdminLogin';
+import { AdminLogout, AdminRowActions, ChangePasswordForm, NewAdminForm } from '@/components/admin/AdminParts';
 import ResultEditor from '@/components/booking/ResultEditor';
 
-export const metadata: Metadata = { title: '관리자 | 클리어스캔', robots: { index: false } };
+export const metadata: Metadata = { title: '관리자 | Scan Longevity', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
 type Search = { all?: string; tab?: string; q?: string };
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<Search> }) {
-  if (!adminToken()) {
-    return <div className="admin"><h1>관리자</h1><p>관리자 페이지를 쓰려면 <code>ADMIN_PASSWORD</code>를 설정하세요.</p></div>;
-  }
-  if (!(await isAdmin())) return <div className="admin"><h1>관리자</h1><AdminLogin /></div>;
+  const admin = await currentAdmin();
+  if (!admin) redirect('/admin/login');
 
   const { all, tab = 'bookings', q = '' } = await searchParams;
 
@@ -25,13 +24,21 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     <div className="admin">
       <div className="admin-head">
         <h1>관리자</h1>
-        <AdminLogout />
+        <div className="admin-who">
+          <span><b>{admin.name}</b> · {admin.role === 'owner' ? '대표 관리자' : '일반 관리자'}</span>
+          <AdminLogout />
+        </div>
       </div>
       <nav className="admin-tabs">
         <a href="/admin" className={tab === 'bookings' ? 'on' : ''}>예약 · 검사 결과</a>
         <a href="/admin?tab=members" className={tab === 'members' ? 'on' : ''}>회원 관리</a>
+        {admin.role === 'owner' && <a href="/admin?tab=admins" className={tab === 'admins' ? 'on' : ''}>관리자 계정</a>}
+        <a href="/admin?tab=account" className={tab === 'account' ? 'on' : ''}>내 계정</a>
       </nav>
-      {tab === 'members' ? <Members q={q} /> : <Bookings all={all === '1'} />}
+      {tab === 'members' ? <Members q={q} />
+        : tab === 'admins' && admin.role === 'owner' ? <Admins me={admin} />
+        : tab === 'account' ? <ChangePasswordForm />
+        : <Bookings all={all === '1'} />}
     </div>
   );
 }
@@ -70,7 +77,10 @@ async function Bookings({ all }: { all: boolean }) {
                   <td>{b.status === 'confirmed' ? '확정' : '취소'}</td>
                   <td>
                     {b.status === 'confirmed' && b.userId
-                      ? <ResultEditor code={b.code} initial={r ? { status: r.status, summary: r.summary, findings: r.findings, recommendation: r.recommendation, published: r.published } : null} />
+                      ? <>
+                          <ResultEditor code={b.code} initial={r ? { status: r.status, summary: r.summary, findings: r.findings, recommendation: r.recommendation, published: r.published } : null} />
+                          {r?.updatedBy && <small className="admin-msg">{r.updatedBy} · {new Date(r.updatedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</small>}
+                        </>
                       : <small>-</small>}
                   </td>
                 </tr>
@@ -122,6 +132,34 @@ async function Members({ q }: { q: string }) {
           </tbody>
         </table>
       </div>
+    </>
+  );
+}
+
+async function Admins({ me }: { me: Admin }) {
+  const admins = await listAdmins();
+  return (
+    <>
+      <div className="admin-table">
+        <table>
+          <thead>
+            <tr><th>이름</th><th>이메일</th><th>권한</th><th>상태</th><th>최근 로그인</th><th>관리</th></tr>
+          </thead>
+          <tbody>
+            {admins.map(a => (
+              <tr key={a.id} className={a.active ? '' : 'cancelled'}>
+                <td><b>{a.name}</b></td>
+                <td>{a.email}</td>
+                <td>{a.role === 'owner' ? '대표' : '일반'}</td>
+                <td>{a.active ? '사용 중' : '비활성'}</td>
+                <td>{a.lastLoginAt ? new Date(a.lastLoginAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) : '-'}</td>
+                <td><AdminRowActions id={a.id} active={a.active} role={a.role} isSelf={a.id === me.id} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <NewAdminForm />
     </>
   );
 }

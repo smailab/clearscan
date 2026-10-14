@@ -1,4 +1,4 @@
-import { isAdmin } from '@/lib/booking/admin';
+import { requireAdmin } from '@/lib/auth/admins';
 import { BookingError } from '@/lib/booking/service';
 import { body, handle } from '@/lib/booking/http';
 import { getByCode } from '@/lib/booking/store';
@@ -8,7 +8,7 @@ type Input = { code: string; status: ResultStatus; summary: string; findings?: s
 
 export async function POST(req: Request) {
   return handle(async () => {
-    if (!(await isAdmin())) throw new BookingError('관리자 로그인이 필요합니다.', 401);
+    const admin = await requireAdmin();
     const r = await body<Input>(req);
     const b = await getByCode(String(r.code ?? ''));
     if (!b) throw new BookingError('예약을 찾을 수 없습니다.', 404);
@@ -24,6 +24,7 @@ export async function POST(req: Request) {
       findings: String(r.findings ?? '').slice(0, 5000),
       recommendation: String(r.recommendation ?? '').slice(0, 2000),
       published: Boolean(r.published),
+      updatedBy: admin.name,
     });
     return { ok: true };
   });

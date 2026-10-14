@@ -6,7 +6,7 @@ import { currentUser } from '@/lib/auth/members';
 import { getPricing } from '@/lib/pricing';
 
 export const metadata: Metadata = {
-  title: '검진 예약 | 클리어스캔',
+  title: '검진 예약 | Scan Longevity',
   description: '원하는 검진 상품과 날짜·시간을 골라 예약하세요.',
 };
 export const dynamic = 'force-dynamic';
