@@ -6,7 +6,7 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "deploy:cf": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "deploy:cf": "wrangler d1 migrations apply clearscan --remote && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "build:cf": "opennextjs-cloudflare build",
     "preview:cf": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "db:migrate": "wrangler d1 migrations apply clearscan --remote",
