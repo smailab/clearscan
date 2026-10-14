@@ -102,3 +102,10 @@
 .admin td small { color: var(--text-3); }
 .admin tr.cancelled td { color: #b9c0cf; text-decoration: line-through; }
 .admin .warn { background: var(--warn-bg); color: #b36b00; border-radius: 4px; padding: 1px 6px; font-weight: 600; }
+
+/* 여러 상품 예약: 확인 화면 검사별 일정 */
+.bk-item-line { display: block; padding: 2px 0; }
+.bk-item-line b { color: var(--primary); margin-right: 4px; }
+.bk-item-line small { display: block; font-weight: 400; color: var(--text-3); font-size: 12px; }
+.bk-plan .pr::before { content: ''; }
+.bk-plans-hint { font-size: 12.5px; color: var(--text-2); margin: -6px 0 10px; }

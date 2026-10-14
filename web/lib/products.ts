@@ -101,8 +101,10 @@ export async function deleteProduct(idRaw: string, today: string): Promise<{ nam
 
   const upcoming = await db.prepare(
     `SELECT COUNT(*) AS n FROM bookings
-     WHERE status = 'confirmed' AND date >= ? AND json_extract(data, '$.planId') = ?`,
-  ).bind(today, id).first<{ n: number }>();
+     WHERE status = 'confirmed' AND date >= ?
+       AND (json_extract(data, '$.planId') = ?
+         OR EXISTS (SELECT 1 FROM json_each(data, '$.items') WHERE json_extract(value, '$.planId') = ?))`,
+  ).bind(today, id, id).first<{ n: number }>();
   if (upcoming?.n) {
     throw new ProductError(`예정된 예약 ${upcoming.n}건이 있어 삭제할 수 없습니다. 예약을 정리하거나 '판매 중지'로 숨겨 주세요.`, 409);
   }

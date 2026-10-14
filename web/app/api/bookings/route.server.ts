@@ -6,6 +6,6 @@ export async function POST(req: Request) {
   return handle(async () => {
     const user = await requireUser();
     const b = await createBooking(await body<BookingRequest>(req), user);
-    return { code: b.code, date: b.date, time: b.time, planId: b.planId, couple: b.couple, price: b.price, discount: b.discount ?? 0 };
+    return { code: b.code, date: b.date, time: b.time, planId: b.planId, planName: b.planName, couple: b.couple, price: b.price, discount: b.discount ?? 0 };
   });
 }

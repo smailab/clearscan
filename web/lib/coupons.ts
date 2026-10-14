@@ -53,8 +53,13 @@ export function discountFor(c: Pick<Coupon, 'discountType' | 'discountValue'>, p
   return Math.max(0, Math.min(price, Math.floor(raw / 100) * 100));
 }
 
-// 이 회원이 이 상품 예약에 쓸 수 있는 쿠폰인지 확인하고 할인액을 돌려준다
-export async function checkCoupon(codeRaw: string, userId: string, product: ProductWithPrice, price: number): Promise<{ coupon: Coupon; discount: number }> {
+// 이 회원이 이 예약(상품 여러 개 가능)에 쓸 수 있는 쿠폰인지 확인하고 할인액을 돌려준다.
+// 상품 전용 쿠폰은 그 상품 금액에서, 전체 상품 쿠폰은 합계에서 할인한다.
+export async function checkCoupon(
+  codeRaw: string,
+  userId: string,
+  items: { product: ProductWithPrice; price: number }[],
+): Promise<{ coupon: Coupon; discount: number }> {
   const code = normalizeCode(codeRaw);
   if (!code) throw new CouponError('쿠폰 코드를 입력해 주세요.');
   const db = await getDB();
@@ -64,12 +69,14 @@ export async function checkCoupon(codeRaw: string, userId: string, product: Prod
   if (!c || !c.active || (c.userId && c.userId !== userId)) throw new CouponError('사용할 수 없는 쿠폰입니다. 코드를 확인해 주세요.');
   if (today < c.validFrom) throw new CouponError(`${c.validFrom}부터 사용할 수 있는 쿠폰입니다.`);
   if (today > c.validUntil) throw new CouponError('사용 기간이 지난 쿠폰입니다.');
-  if (c.productId && c.productId !== product.id) throw new CouponError('이 상품에는 쓸 수 없는 쿠폰입니다.');
+  const target = c.productId ? items.find(it => it.product.id === c.productId) : null;
+  if (c.productId && !target) throw new CouponError('선택한 상품에는 쓸 수 없는 쿠폰입니다.');
   if (c.maxUses !== null && c.usedCount >= c.maxUses) throw new CouponError('발급 수량이 모두 사용된 쿠폰입니다.');
   if (await db.prepare('SELECT 1 FROM coupon_redemptions WHERE coupon_code = ? AND user_id = ?').bind(code, userId).first()) {
     throw new CouponError('이미 사용한 쿠폰입니다.');
   }
-  return { coupon: c, discount: discountFor(c, price) };
+  const base = target ? target.price : items.reduce((n, it) => n + it.price, 0);
+  return { coupon: c, discount: discountFor(c, base) };
 }
 
 // 사용 횟수 선점 (동시에 여러 명이 써도 한도를 넘지 않게 조건부로 올린다)

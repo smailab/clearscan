@@ -2,15 +2,14 @@ import 'server-only';
 import { randomInt } from 'crypto';
 import type { User } from '@/lib/auth/members';
 import { CouponError, checkCoupon, redemptionStmt, releaseCouponUse, reserveCouponUse, restoreStmts } from '@/lib/coupons';
-import { getProduct, listProducts } from '@/lib/products';
-import { priceOf, slotsNeeded } from '@/lib/products-shared';
+import { listProducts } from '@/lib/products';
+import { priceOf, type ProductWithPrice } from '@/lib/products-shared';
 import {
-  CouponUsedError, DuplicateCodeError, SlotConflictError, getByCode, insert, listActive, listAll, listByUser, saveCancelled,
+  CouponUsedError, DuplicateCodeError, SlotConflictError, getByCode, insert, listAll, listByUser, saveCancelled, takenSlots,
 } from './store';
-import {
-  canCancel, candidateStarts, isBookableDate, isValidDate, kstToday, normalizePhone, overlaps, toHHMM, toMin,
-} from './schedule';
-import type { Booking, BookingRequest, Person, SlotInfo } from './types';
+import { canCancel, candidateStarts, isBookableDate, isValidDate, kstToday, normalizePhone, toHHMM, toMin } from './schedule';
+import { MAX_ITEMS, buildSegments, orderItems, segmentSlotStarts, totalSlots } from './visit';
+import type { Booking, BookingItem, BookingRequest, Person, SlotInfo } from './types';
 
 export class BookingError extends Error {
   constructor(message: string, public status = 400) { super(message); }
@@ -24,15 +23,35 @@ function newCode(): string {
   return c;
 }
 
-export async function getAvailability(planId: string, coupleReq: boolean, date: string): Promise<SlotInfo[]> {
-  const product = await getProduct(planId);
-  if (!product) throw new BookingError('존재하지 않는 검진 상품입니다.');
+// 요청한 상품 ID들 → 판매 중인 상품 (중복 제거, 최대 MAX_ITEMS개)
+async function resolveProducts(planIds: string[]): Promise<ProductWithPrice[]> {
+  const ids = [...new Set(planIds.map(s => String(s ?? '').trim()).filter(Boolean))];
+  if (!ids.length) throw new BookingError('검진 상품을 선택해 주세요.');
+  if (ids.length > MAX_ITEMS) throw new BookingError(`한 번에 ${MAX_ITEMS}개 상품까지 예약할 수 있습니다.`);
+  const all = await listProducts();
+  const products = ids.map(id => all.find(p => p.id === id));
+  if (products.some(p => !p)) throw new BookingError('예약할 수 없는 검진 상품이 포함되어 있습니다.');
+  return orderItems(products as ProductWithPrice[]);
+}
+
+// 커플 플랜은 선택한 상품이 모두 커플 가능할 때만
+const coupleOk = (products: ProductWithPrice[]) => products.every(p => p.couple);
+
+// 시작 시각 t에 모든 검사를 이어서 배치할 수 있는지 (장비별로 빈 슬롯인지)
+function fits(products: ProductWithPrice[], couple: boolean, t: number, taken: Map<string, Set<number>>): boolean {
+  return buildSegments(products, couple, t).every(seg =>
+    segmentSlotStarts(seg).every(s => !taken.get(seg.resource)?.has(s)),
+  );
+}
+
+export async function getAvailability(planIds: string[], coupleReq: boolean, date: string): Promise<SlotInfo[]> {
+  const products = await resolveProducts(planIds);
   if (!isValidDate(date) || !isBookableDate(date)) return [];
-  const need = slotsNeeded(product, coupleReq && product.couple);
-  const taken = await listActive(product.kind, date);
-  return candidateStarts(date, need).map(t => ({
+  const couple = coupleReq && coupleOk(products);
+  const taken = await takenSlots(date);
+  return candidateStarts(date, totalSlots(products, couple)).map(t => ({
     time: toHHMM(t),
-    available: !taken.some(b => overlaps(t, need, toMin(b.time), b.slots)),
+    available: fits(products, couple, t, taken),
   }));
 }
 
@@ -49,14 +68,16 @@ function validPerson(p: Person | undefined, label: string): Person {
 }
 
 const TAKEN_MSG = '방금 다른 예약이 들어온 시간입니다. 다른 시간을 선택해 주세요.';
+const itemPrices = (products: ProductWithPrice[], couple: boolean) => products.map(p => ({ product: p, price: priceOf(p, couple) }));
+const planIdsOf = (req: { planIds?: string[]; planId?: string }) => (req.planIds?.length ? req.planIds : req.planId ? [req.planId] : []);
 
 // 예약 화면의 쿠폰 확인 (할인 금액 미리보기)
-export async function previewCoupon(user: User, code: string, planId: string, coupleReq: boolean) {
-  const product = await getProduct(planId);
-  if (!product) throw new BookingError('존재하지 않는 검진 상품입니다.');
-  const listPrice = priceOf(product, coupleReq && product.couple);
+export async function previewCoupon(user: User, code: string, planIds: string[], coupleReq: boolean) {
+  const products = await resolveProducts(planIds);
+  const items = itemPrices(products, coupleReq && coupleOk(products));
+  const listPrice = items.reduce((n, it) => n + it.price, 0);
   try {
-    const { coupon, discount } = await checkCoupon(code, user.id, product, listPrice);
+    const { coupon, discount } = await checkCoupon(code, user.id, items);
     return { code: coupon.code, name: coupon.name, discount, listPrice, price: listPrice - discount };
   } catch (e) {
     if (e instanceof CouponError) throw new BookingError(e.message, e.status);
@@ -66,17 +87,15 @@ export async function previewCoupon(user: User, code: string, planId: string, co
 
 // 예약자 본인 정보는 클라이언트 입력이 아니라 로그인한 회원 정보로 채운다
 export async function createBooking(req: BookingRequest, user: User): Promise<Booking> {
-  const product = await getProduct(req.planId);
-  if (!product) throw new BookingError('예약할 수 없는 검진 상품입니다.');
+  const products = await resolveProducts(planIdsOf(req));
   if (!req.consent?.privacy || !req.consent?.sensitive) throw new BookingError('개인정보 및 민감정보 수집·이용에 동의해 주세요.');
   if (!isValidDate(req.date) || !isBookableDate(req.date)) throw new BookingError('예약할 수 없는 날짜입니다.');
 
-  const couple = Boolean(req.couple) && product.couple;
+  const couple = Boolean(req.couple) && coupleOk(products);
   const person: Person = { name: user.name, phone: user.phone, birth: user.birth, sex: user.sex };
   const partner = couple ? validPerson(req.partner, '동반자') : undefined;
-  const need = slotsNeeded(product, couple);
   const start = /^\d{2}:\d{2}$/.test(req.time) ? toMin(req.time) : -1;
-  if (!candidateStarts(req.date, need).includes(start)) throw new BookingError('예약할 수 없는 시간입니다.');
+  if (!candidateStarts(req.date, totalSlots(products, couple)).includes(start)) throw new BookingError('예약할 수 없는 시간입니다.');
 
   const survey = {
     metalImplant: Boolean(req.survey?.metalImplant),
@@ -86,14 +105,20 @@ export async function createBooking(req: BookingRequest, user: User): Promise<Bo
   };
 
   // 빠른 실패: 이미 찬 시간이면 바로 안내 (최종 판단은 저장소의 원자적 insert가 한다)
-  const taken = await listActive(product.kind, req.date);
-  if (taken.some(b => overlaps(start, need, toMin(b.time), b.slots))) throw new BookingError(TAKEN_MSG, 409);
+  if (!fits(products, couple, start, await takenSlots(req.date))) throw new BookingError(TAKEN_MSG, 409);
 
-  const listPrice = priceOf(product, couple);
+  const segments = buildSegments(products, couple, start);
+  const prices = itemPrices(products, couple);
+  const items: BookingItem[] = segments.map(seg => {
+    const p = products.find(x => x.id === seg.planId)!;
+    return { planId: p.id, planName: p.name, resource: seg.resource, start: toHHMM(seg.start), slots: seg.slots, price: priceOf(p, couple) };
+  });
+  const listPrice = prices.reduce((n, it) => n + it.price, 0);
+
   let coupon: { code: string; discount: number } | null = null;
   if (req.couponCode && String(req.couponCode).trim()) {
     try {
-      const c = await checkCoupon(req.couponCode, user.id, product, listPrice);
+      const c = await checkCoupon(req.couponCode, user.id, prices);
       coupon = { code: c.coupon.code, discount: c.discount };
     } catch (e) {
       if (e instanceof CouponError) throw new BookingError(e.message, e.status);
@@ -108,13 +133,14 @@ export async function createBooking(req: BookingRequest, user: User): Promise<Bo
       const booking: Booking = {
         code: newCode(),
         userId: user.id,
-        planId: product.id,
-        planName: product.name,
-        resource: product.kind,
+        planId: items[0].planId,
+        planName: items.map(it => it.planName).join(' + '),
+        resource: items[0].resource,
         date: req.date,
         time: toHHMM(start),
-        slots: need,
+        slots: totalSlots(products, couple),
         couple,
+        items,
         person,
         partner,
         survey,
@@ -167,7 +193,7 @@ export async function listBookings(): Promise<Booking[]> {
   return listAll();
 }
 
-// 예약에 표시할 상품명 (예약 당시 이름 우선)
+// 예약에 표시할 상품명 (예약 당시 이름 우선, 여러 상품이면 " + "로 연결)
 export async function planNameOf(b: Booking): Promise<string> {
   if (b.planName) return b.planName;
   const p = (await listProducts({ includeInactive: true })).find(x => x.id === b.planId);

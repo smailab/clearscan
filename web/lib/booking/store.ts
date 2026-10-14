@@ -10,10 +10,26 @@ export class DuplicateCodeError extends Error {}
 export class CouponUsedError extends Error {}
 
 const SLOT_MIN = 30;
-const slotStarts = (b: Booking) => {
-  const [h, m] = b.time.split(':').map(Number);
-  return Array.from({ length: b.slots }, (_, i) => h * 60 + m + i * SLOT_MIN);
+// 예약이 점유하는 (장비, 슬롯 시작) 목록 — 여러 상품 예약은 검사별로, 예전 예약은 하나로
+const occupied = (b: Booking): { resource: string; start: number }[] => {
+  const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const segs = b.items?.length
+    ? b.items.map(it => ({ resource: it.resource, start: toMin(it.start), slots: it.slots }))
+    : [{ resource: b.resource, start: toMin(b.time), slots: b.slots }];
+  return segs.flatMap(s => Array.from({ length: s.slots }, (_, i) => ({ resource: s.resource, start: s.start + i * SLOT_MIN })));
 };
+
+// 날짜별로 이미 찬 슬롯 (장비 → 슬롯 시작 시각들)
+export async function takenSlots(date: string): Promise<Map<string, Set<number>>> {
+  const db = await getDB();
+  const { results } = await db.prepare('SELECT resource, slot_start FROM booking_slots WHERE date = ?').bind(date).all<{ resource: string; slot_start: number }>();
+  const map = new Map<string, Set<number>>();
+  for (const r of results) {
+    if (!map.has(r.resource)) map.set(r.resource, new Set());
+    map.get(r.resource)!.add(r.slot_start);
+  }
+  return map;
+}
 const parse = (rows: { data: string }[]) => rows.map(r => JSON.parse(r.data) as Booking);
 
 export async function listAll(): Promise<Booking[]> {
@@ -51,8 +67,8 @@ export async function insert(b: Booking, extra: D1Stmt[] = []): Promise<void> {
   const stmts = [
     db.prepare('INSERT INTO bookings (code, date, time, resource, status, phone, created_at, user_id, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(b.code, b.date, b.time, b.resource, b.status, b.person.phone, b.createdAt, b.userId ?? null, JSON.stringify(b)),
-    ...slotStarts(b).map(s =>
-      db.prepare('INSERT INTO booking_slots (resource, date, slot_start, code) VALUES (?, ?, ?, ?)').bind(b.resource, b.date, s, b.code),
+    ...occupied(b).map(o =>
+      db.prepare('INSERT INTO booking_slots (resource, date, slot_start, code) VALUES (?, ?, ?, ?)').bind(o.resource, b.date, o.start, b.code),
     ),
     ...extra,
   ];

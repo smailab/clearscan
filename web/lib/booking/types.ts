@@ -12,6 +12,16 @@ export type Survey = {
   memo: string;
 };
 
+// 한 예약에 담긴 검사 하나 (여러 상품 동시 예약)
+export type BookingItem = {
+  planId: string;
+  planName: string;
+  resource: 'MRI' | 'CT';
+  start: string;   // HH:MM — 이 검사의 시작 시각
+  slots: number;   // 장비 점유 슬롯 수 (30분 단위)
+  price: number;   // 이 검사 금액 (커플이면 2인 금액)
+};
+
 export type Booking = {
   code: string;
   userId?: string;
@@ -19,8 +29,9 @@ export type Booking = {
   resource: 'MRI' | 'CT';
   date: string;
   time: string;
-  slots: number;
+  slots: number;            // 방문 전체 길이 (30분 단위)
   couple: boolean;
+  items?: BookingItem[];     // 여러 상품 예약 시 검사별 일정 (없으면 planId 하나짜리 예전 예약)
   person: Person;
   partner?: Person;
   survey: Survey;
@@ -35,7 +46,8 @@ export type Booking = {
 };
 
 export type BookingRequest = {
-  planId: string;
+  planId?: string;          // 예전 단일 상품 요청 호환
+  planIds?: string[];
   couple: boolean;
   date: string;
   time: string;

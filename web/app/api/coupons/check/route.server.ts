@@ -5,7 +5,7 @@ import { body, handle, requireUser } from '@/lib/booking/http';
 export async function POST(req: Request) {
   return handle(async () => {
     const user = await requireUser();
-    const { code, planId, couple } = await body<{ code: string; planId: string; couple: boolean }>(req);
-    return previewCoupon(user, code, planId, Boolean(couple));
+    const { code, planIds, planId, couple } = await body<{ code: string; planIds?: string[]; planId?: string; couple: boolean }>(req);
+    return previewCoupon(user, code, planIds?.length ? planIds : planId ? [planId] : [], Boolean(couple));
   });
 }
