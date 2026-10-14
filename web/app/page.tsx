@@ -5,6 +5,7 @@ import HeroSlider from '@/components/HeroSlider';
 import Plans from '@/components/Plans';
 import OrganGuide from '@/components/OrganGuide';
 import CenterList from '@/components/center/CenterList';
+import HScroll from '@/components/HScroll';
 import { Chevron, IconCalendar, IconPin, IconScan, IconWon } from '@/components/icons';
 import { facts, factsNote, faqs, reviews, reviewsNote, site, steps, won } from '@/lib/data';
 import { currentUser } from '@/lib/auth/members';
@@ -102,7 +103,7 @@ export default async function Home() {
       {/* 이용 후기 */}
       <section className="sec" id="reviews">
         <div className="sec-head"><h2>이용 후기</h2></div>
-        <div className="hscroll">
+        <HScroll label="이용 후기">
           {reviews.map(r => (
             <article className="review" key={r.who + r.meta}>
               <div className="thumb">
@@ -113,7 +114,7 @@ export default async function Home() {
               <span className="meta"><span className="stars">★★★★★</span>{r.who} · {r.meta}</span>
             </article>
           ))}
-        </div>
+        </HScroll>
         <p className="note">{reviewsNote}</p>
       </section>
 

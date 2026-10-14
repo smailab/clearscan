@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { won } from '@/lib/data';
 import type { Product } from '@/lib/products-shared';
 import { Chevron } from './icons';
+import HScroll from './HScroll';
 
 // prices: 로그인한 회원에게만 서버가 내려준다. 비회원(null)에게는 가격 대신 가입 안내를 보여준다
 export default function Plans({ products, prices }: { products: Product[]; prices: Record<string, number> | null }) {
@@ -36,7 +37,7 @@ export default function Plans({ products, prices }: { products: Product[]; price
       </div>
       <p className="sec-sub">내 몸속을 더 넓고 자세하게, 나에게 맞는 검진을 고르세요.</p>
 
-      <div className="hscroll">
+      <HScroll label="검진 상품">
         {products.filter(p => p.kind === kind).map(p => (
           <button key={p.id} type="button" className={`pcard${p.featured ? ' featured' : ''}`} onClick={() => setOpen(p)}>
             <div className="thumb">
@@ -53,7 +54,7 @@ export default function Plans({ products, prices }: { products: Product[]; price
             </div>
           </button>
         ))}
-      </div>
+      </HScroll>
       {!prices && (
         <Link className="locked-banner" href={`/signup?next=${encodeURIComponent('/#plans')}`}>
           <span>검진 요금은 <b>회원 전용</b>으로 안내해 드려요</span>
