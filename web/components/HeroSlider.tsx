@@ -19,7 +19,7 @@ function BrandSlide() {
   return (
     <div className="brand-slide" role="img" aria-label="THOR SCAN — Total Health Optimization & Rejuvenation, 통합적 건강 최적화와 건강 수명 관리">
       <span className="bs-scan" aria-hidden="true" />
-      <p className="bs-eyebrow">PRECISION LONGEVITY · PREVENTIVE MEDICINE</p>
+      <p className="bs-eyebrow"><span>PREMIUM MEDICAL CONCIERGE</span> <span>MEMBERSHIP FOR LONGEVITY</span></p>
       <p className="bs-title"><LogoMark size={30} /> THOR SCAN</p>
       <ul className="bs-acronym" aria-hidden="true">
         {ACRONYM.map(a => (
