@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { won } from '@/lib/data';
 import type { Product } from '@/lib/products-shared';
-import { Chevron } from './icons';
+import { Chevron, LineLock } from './icons';
 import HScroll from './HScroll';
 
 // prices: 로그인한 회원에게만 서버가 내려준다. 비회원(null)에게는 가격 대신 가입 안내를 보여준다
@@ -49,7 +49,7 @@ export default function Plans({ products, prices }: { products: Product[]; price
               <span className="time">{p.time}</span>
               {prices
                 ? <span className="price">{won(prices[p.id])}<small>원</small></span>
-                : <span className="price locked">🔒 회원 전용 요금</span>}
+                : <span className="price locked"><LineLock />회원 전용 요금</span>}
               <span className="detail">구성 자세히 보기 ›</span>
             </div>
           </button>
@@ -57,7 +57,7 @@ export default function Plans({ products, prices }: { products: Product[]; price
       </HScroll>
       {!prices && (
         <Link className="locked-banner" href={`/signup?next=${encodeURIComponent('/#plans')}`}>
-          <span>검진 요금은 <b>회원 전용</b>으로 안내해 드려요</span>
+          <span><LineLock size={16} />검진 요금은 <b>회원 전용</b>으로 안내해 드려요</span>
           <b>회원가입 ›</b>
         </Link>
       )}
@@ -74,7 +74,7 @@ export default function Plans({ products, prices }: { products: Product[]; price
               ? <p className="price">{won(prices[open.id])}<small>원</small></p>
               : (
                 <Link className="locked-cta" href={`/signup?next=${encodeURIComponent('/#plans')}`}>
-                  <span>🔒 요금은 회원에게만 안내해 드려요</span>
+                  <span><LineLock size={16} />요금은 회원에게만 안내해 드려요</span>
                   <b>회원가입하고 요금 보기 ›</b>
                 </Link>
               )}

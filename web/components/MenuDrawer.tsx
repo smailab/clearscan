@@ -5,15 +5,16 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { site } from '@/lib/data';
 import Logo from './Logo';
+import { LineCalendar, LineCard, LineHelp, LineHome, LinePen, LinePin, LineScan } from './icons';
 
 const LINKS = [
-  { href: '/', label: '홈', icon: '🏠' },
-  { href: '/booking', label: '검진 예약', icon: '📅' },
-  { href: '/#plans', label: '검진 상품 · 요금', icon: '💳' },
-  { href: '/how-it-works', label: '이용 방법 · 검사 장기', icon: '🩻' },
-  { href: '/centers', label: '검진 센터', icon: '📍' },
-  { href: '/posts', label: '건강 칼럼', icon: '📝' },
-  { href: '/#faq', label: '자주 묻는 질문', icon: '❓' },
+  { href: '/', label: '홈', Icon: LineHome },
+  { href: '/booking', label: '검진 예약', Icon: LineCalendar },
+  { href: '/#plans', label: '검진 상품 · 요금', Icon: LineCard },
+  { href: '/how-it-works', label: '이용 방법 · 검사 장기', Icon: LineScan },
+  { href: '/centers', label: '검진 센터', Icon: LinePin },
+  { href: '/posts', label: '건강 칼럼', Icon: LinePen },
+  { href: '/#faq', label: '자주 묻는 질문', Icon: LineHelp },
 ];
 
 // 헤더 오른쪽 햄버거 버튼 + 오른쪽에서 열리는 바로가기 메뉴
@@ -71,7 +72,7 @@ export default function MenuDrawer({ loggedIn }: { loggedIn: boolean }) {
               {LINKS.map(l => (
                 <li key={l.href}>
                   <Link href={l.href} onClick={() => setOpen(false)}>
-                    <span className="ic" aria-hidden="true">{l.icon}</span>{l.label}<span className="chev" aria-hidden="true">›</span>
+                    <span className="ic" aria-hidden="true"><l.Icon /></span>{l.label}<span className="chev" aria-hidden="true">›</span>
                   </Link>
                 </li>
               ))}

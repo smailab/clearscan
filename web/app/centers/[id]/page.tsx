@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { CopyButton, Gallery, Hours, SectionTabs } from '@/components/center/CenterParts';
-import { Chevron } from '@/components/icons';
+import { Chevron, LineLock } from '@/components/icons';
 import { won } from '@/lib/data';
 import { getCenter } from '@/lib/centers';
 import { mapLinks, specialtiesOf } from '@/lib/centers-shared';
@@ -159,7 +159,7 @@ export default async function CenterPage({ params }: Params) {
               <Link href={`/booking?plan=${p.id}`}>
                 <span className="kind">{p.kind}</span>
                 <span className="txt"><b>{p.name}</b><small>{p.time}</small></span>
-                {prices ? <span className="pr">{won(prices[p.id])}원</span> : <span className="pr locked">🔒 회원 전용</span>}
+                {prices ? <span className="pr">{won(prices[p.id])}원</span> : <span className="pr locked"><LineLock />회원 전용 요금</span>}
                 <Chevron className="chev" />
               </Link>
             </li>

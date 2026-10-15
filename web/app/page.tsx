@@ -8,7 +8,7 @@ import CenterList from '@/components/center/CenterList';
 import HScroll from '@/components/HScroll';
 import PostCards from '@/components/post/PostCards';
 import { listPosts } from '@/lib/posts';
-import { Chevron, IconCalendar, IconPin, IconScan, IconWon } from '@/components/icons';
+import { Chevron, IconCalendar, IconPin, IconScan, IconWon, LineLock, LineScan } from '@/components/icons';
 import { facts, factsNote, faqs, reviews, reviewsNote, site, steps, won } from '@/lib/data';
 import { currentUser } from '@/lib/auth/members';
 import { getPricing } from '@/lib/pricing';
@@ -24,7 +24,7 @@ export default async function Home() {
   return (
     <Shell>
       <section className="hero">
-        <div className="notice"><span className="chip">🎉 이벤트</span><span className="msg">{site.notice}</span></div>
+        <div className="notice"><span className="chip">이벤트</span><span className="msg">{site.notice}</span></div>
         {user ? (
           <Link className="member-strip" href="/my">
             <span><b>{user.name}</b>님, 반가워요</span>
@@ -38,10 +38,10 @@ export default async function Home() {
         )}
         <HeroSlider />
         <div className="stat-row">
-          <span className="stat-pill">📌 연 1회 전신 MRI 검진</span>
+          <span className="stat-pill"><LineScan size={14} />연 1회 전신 MRI 검진</span>
           {pricing
             ? <span className="stat-right"><b>{won(pricing.from)}</b>원부터</span>
-            : <Link className="stat-right locked" href="/signup?next=%2F%23plans">🔒 요금은 회원 전용</Link>}
+            : <Link className="stat-right locked" href="/signup?next=%2F%23plans"><LineLock />회원 전용 요금 보기</Link>}
         </div>
       </section>
 
@@ -83,7 +83,7 @@ export default async function Home() {
           <ul>
             {pricing
               ? pricing.coupleOffers.map(c => <li key={c.name}><b>{c.save} 할인</b>{c.name}</li>)
-              : products.filter(p => p.couple).map(p => <li key={p.id}><b>🔒 회원 전용</b>{p.name}</li>)}
+              : products.filter(p => p.couple).map(p => <li key={p.id}><b><LineLock />회원 전용 요금</b>{p.name}</li>)}
           </ul>
         </div>
       </section>

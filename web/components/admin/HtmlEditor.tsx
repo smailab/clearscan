@@ -113,8 +113,8 @@ export default function HtmlEditor({ value, onChange }: { value: string; onChang
         <B on={st?.quote} label="❝ 인용" title="인용" run={() => c().toggleBlockquote().run()} />
         <B label="― 구분선" title="구분선" run={() => c().setHorizontalRule().run()} />
         <span className="he-sep" />
-        <B on={st?.link || panel === 'link'} label="🔗 링크" title="링크" run={() => { setLinkUrl(editor.getAttributes('link').href ?? ''); setPanel(panel === 'link' ? null : 'link'); }} />
-        <B on={panel === 'image'} label="🖼 이미지" title="이미지" run={() => setPanel(panel === 'image' ? null : 'image')} />
+        <B on={st?.link || panel === 'link'} label="링크" title="링크" run={() => { setLinkUrl(editor.getAttributes('link').href ?? ''); setPanel(panel === 'link' ? null : 'link'); }} />
+        <B on={panel === 'image'} label="이미지" title="이미지" run={() => setPanel(panel === 'image' ? null : 'image')} />
         <B on={st?.table} label="▦ 표" title="표 넣기 (3×3)" run={() => c().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
         {st?.table && (
           <>

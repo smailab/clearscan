@@ -3,9 +3,9 @@
 export function LogoMark({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" className="logo-svg">
-      <circle cx="24" cy="24" r="23" fill="#14284b" />
-      <circle cx="24" cy="24" r="14.5" fill="#a9cdf0" />
-      <rect x="4.5" y="21.2" width="39" height="5.6" rx="2.8" fill="#7aa6dc" />
+      <circle cx="24" cy="24" r="23" fill="var(--navy)" />
+      <circle cx="24" cy="24" r="14.5" fill="var(--sky)" />
+      <rect x="4.5" y="21.2" width="39" height="5.6" rx="2.8" fill="var(--scan)" />
     </svg>
   );
 }
