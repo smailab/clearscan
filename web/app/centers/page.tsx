@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Shell from '@/components/Shell';
 import CenterList from '@/components/center/CenterList';
 
-export const metadata: Metadata = { title: '검진 센터 | THOR SCAN LONGEVITY' };
+export const metadata: Metadata = { title: '검진 센터 | BOSCO LONGEVITY' };
 export const dynamic = 'force-dynamic';
 
 export default function CentersPage() {

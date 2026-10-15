@@ -1,4 +1,4 @@
-// THOR SCAN LONGEVITY 로고 — 원형 심볼(남색 원 + 하늘색 원 + 스캔 막대) + 두 줄 워드마크
+// BOSCO LONGEVITY 로고 — 원형 심볼(남색 원 + 하늘색 원 + 스캔 막대) + 두 줄 워드마크
 // 워드마크 색은 currentColor라서 배경에 따라 바뀐다 (파란 히어로 위: 흰색, 흰 배경: 남색)
 export function LogoMark({ size = 28 }: { size?: number }) {
   return (
@@ -15,7 +15,7 @@ export default function Logo({ size = 28 }: { size?: number }) {
     <span className="brand">
       <LogoMark size={size} />
       <span className="brand-word" style={{ fontSize: Math.round(size * 0.42) }}>
-        <span>THOR SCAN</span>
+        <span>BOSCO</span>
         <span>LONGEVITY</span>
       </span>
     </span>

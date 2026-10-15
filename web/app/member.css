@@ -131,7 +131,7 @@
 .admin-actions button.danger { color: var(--danger); border-color: var(--danger-line); }
 .admin-msg { display: block; margin-top: 4px; font-size: 11.5px; color: var(--text-3); }
 
-/* ---------- THOR SCAN LONGEVITY 로고 ---------- */
+/* ---------- BOSCO LONGEVITY 로고 ---------- */
 .brand { display: inline-flex; align-items: center; gap: 8px; color: inherit; }
 .brand .logo-svg { flex: none; display: block; }
 .brand-word { display: flex; flex-direction: column; line-height: 1.02; font-weight: 800; letter-spacing: .06em; font-family: Montserrat, Pretendard, sans-serif; }
