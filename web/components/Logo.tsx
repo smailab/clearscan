@@ -15,7 +15,7 @@ export default function Logo({ size = 28 }: { size?: number }) {
     <span className="brand">
       <LogoMark size={size} />
       <span className="brand-word" style={{ fontSize: Math.round(size * 0.42) }}>
-        <span>ORAE</span>
+        <span>ORAE <span className="ko">오래</span> HEALTH</span>
         <span>LONGEVITY CLUB</span>
       </span>
     </span>

@@ -15,7 +15,7 @@ function BrandSlide() {
       <p className="bs-eyebrow"><span>PREMIUM MEDICAL CONCIERGE</span> <span>MEMBERSHIP FOR LONGEVITY</span></p>
       <p className="bs-title">
         <LogoMark size={40} />
-        <span className="bs-word"><b>ORAE</b><small>LONGEVITY CLUB</small></span>
+        <span className="bs-word"><b>ORAE <span className="ko">오래</span> HEALTH</b><small>LONGEVITY CLUB</small></span>
       </p>
       <p className="bs-en">Total Health Optimization &amp; Rejuvenation</p>
       <p className="bs-ko">통합적 건강 최적화와 건강 수명 관리</p>

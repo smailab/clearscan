@@ -134,7 +134,7 @@
 /* ---------- ORAE LONGEVITY CLUB 로고 ---------- */
 .brand { display: inline-flex; align-items: center; gap: 8px; color: inherit; }
 .brand .logo-svg { flex: none; display: block; }
-.brand-word { display: flex; flex-direction: column; line-height: 1.02; font-weight: 800; letter-spacing: .06em; font-family: Montserrat, Pretendard, sans-serif; }
+.brand-word { display: flex; flex-direction: column; white-space: nowrap; line-height: 1.02; font-weight: 800; letter-spacing: .06em; font-family: Montserrat, Pretendard, sans-serif; }
 .header .logo { color: #fff; }
 .header .logo .logo-svg circle:first-child { stroke: rgba(255,255,255,.85); stroke-width: 1.5px; }
 .footer .flogo { color: var(--navy); }
@@ -388,7 +388,8 @@
 .bs-eyebrow span { display: block; white-space: nowrap; }
 .bs-title { display: flex; align-items: center; gap: 12px; margin-top: 14px; font-family: Montserrat, Pretendard, sans-serif; }
 .bs-word { display: flex; flex-direction: column; gap: 4px; }
-.bs-word b { font-size: 34px; font-weight: 800; letter-spacing: .14em; line-height: 1; }
+.bs-word b { font-size: 25px; font-weight: 800; letter-spacing: .1em; line-height: 1; white-space: nowrap; }
+.brand-word .ko, .bs-word .ko { font-family: Pretendard, sans-serif; letter-spacing: 0; font-weight: 800; }
 .bs-word small { font-size: 11px; font-weight: 700; letter-spacing: .32em; color: var(--sky); line-height: 1; }
 .bs-title .logo-svg { flex: none; }
 .bs-title .logo-svg circle:first-child { stroke: rgba(255,255,255,.85); stroke-width: 1.5px; }
@@ -399,7 +400,7 @@
   .bs-eyebrow { font-size: 9.5px; letter-spacing: .1em; }
   .bs-title { gap: 10px; margin-top: 12px; }
   .bs-title .logo-svg { width: 34px; height: 34px; }
-  .bs-word b { font-size: 29px; }
+  .bs-word b { font-size: 21px; }
   .bs-word small { font-size: 10px; letter-spacing: .28em; }
   .bs-en { font-size: 11px; margin-top: 8px; padding-top: 6px; }
   .bs-ko { font-size: 12px; }
