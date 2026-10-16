@@ -17,7 +17,7 @@ import { won } from '@/lib/data';
 import { AdminLogout, AdminRowActions, ChangePasswordForm, NewAdminForm } from '@/components/admin/AdminParts';
 import BookingResultRow from '@/components/booking/ResultEditor';
 
-export const metadata: Metadata = { title: '관리자 | BOSCO LONGEVITY', robots: { index: false } };
+export const metadata: Metadata = { title: '관리자 | ORAE LONGEVITY CLUB', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
 type Search = { all?: string; tab?: string; q?: string };

@@ -7,25 +7,16 @@ import { LogoMark } from './Logo';
 
 const INTERVAL = 4500;
 
-// THOR 브랜드 슬라이드 (이미지 대신 HTML로 그려서 어느 화면에서나 선명하게)
-const ACRONYM = [
-  { l: 'T', w: 'Total' },
-  { l: 'H', w: 'Health' },
-  { l: 'O', w: 'Optimization' },
-  { l: 'R', w: 'Rejuvenation' },
-];
-
+// ORAE 브랜드 슬라이드 (이미지 대신 HTML로 그려서 어느 화면에서나 선명하게)
 function BrandSlide() {
   return (
-    <div className="brand-slide" role="img" aria-label="THOR SCAN — Total Health Optimization & Rejuvenation, 통합적 건강 최적화와 건강 수명 관리">
+    <div className="brand-slide" role="img" aria-label="ORAE LONGEVITY CLUB — Premium medical concierge membership for longevity, 통합적 건강 최적화와 건강 수명 관리">
       <span className="bs-scan" aria-hidden="true" />
       <p className="bs-eyebrow"><span>PREMIUM MEDICAL CONCIERGE</span> <span>MEMBERSHIP FOR LONGEVITY</span></p>
-      <p className="bs-title"><LogoMark size={30} /> THOR SCAN</p>
-      <ul className="bs-acronym" aria-hidden="true">
-        {ACRONYM.map(a => (
-          <li key={a.l}><b>{a.l}</b><span>—</span>{a.w}</li>
-        ))}
-      </ul>
+      <p className="bs-title">
+        <LogoMark size={40} />
+        <span className="bs-word"><b>ORAE</b><small>LONGEVITY CLUB</small></span>
+      </p>
       <p className="bs-en">Total Health Optimization &amp; Rejuvenation</p>
       <p className="bs-ko">통합적 건강 최적화와 건강 수명 관리</p>
     </div>

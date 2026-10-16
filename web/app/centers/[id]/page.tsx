@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const c = await getCenter((await params).id);
   if (!c) return {};
   return {
-    title: `${c.name} | BOSCO LONGEVITY 검진 센터`,
+    title: `${c.name} | ORAE LONGEVITY CLUB 검진 센터`,
     description: `${c.region} ${c.name} — ${c.intro}`,
   };
 }

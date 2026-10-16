@@ -5,8 +5,8 @@ import OrganGuide from '@/components/OrganGuide';
 import { careTeam, organs, steps } from '@/lib/data';
 
 export const metadata: Metadata = {
-  title: '이용 방법 | BOSCO LONGEVITY',
-  description: '예약부터 맞춤 건강 플랜까지, 네 단계로 끝나는 BOSCO LONGEVITY 전신 MRI 검진 이용 방법.',
+  title: '이용 방법 | ORAE LONGEVITY CLUB',
+  description: '예약부터 맞춤 건강 플랜까지, 네 단계로 끝나는 ORAE LONGEVITY CLUB 전신 MRI 검진 이용 방법.',
 };
 
 export default function HowItWorks() {

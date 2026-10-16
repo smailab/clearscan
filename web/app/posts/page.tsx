@@ -4,7 +4,7 @@ import PostCards from '@/components/post/PostCards';
 import { listPosts } from '@/lib/posts';
 
 export const metadata: Metadata = {
-  title: '건강 칼럼 | BOSCO LONGEVITY',
+  title: '건강 칼럼 | ORAE LONGEVITY CLUB',
   description: '전신 MRI와 조기 검진에 대해 알아 두면 좋은 이야기.',
 };
 export const dynamic = 'force-dynamic';

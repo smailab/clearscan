@@ -9,7 +9,7 @@ import { BookingError, myBooking, planNameOf } from '@/lib/booking/service';
 import { site } from '@/lib/data';
 import { listCenters } from '@/lib/centers';
 
-export const metadata: Metadata = { title: '검사 결과 | BOSCO LONGEVITY', robots: { index: false } };
+export const metadata: Metadata = { title: '검사 결과 | ORAE LONGEVITY CLUB', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
 export default async function ResultPage({ params }: { params: Promise<{ code: string }> }) {
