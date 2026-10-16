@@ -4,11 +4,13 @@ import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import { TableKit } from '@tiptap/extension-table';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { ACCEPT, imageFiles, uploadImage } from './uploadImage';
 
 // 관리자 글쓰기용 HTML 문서 에디터 (TipTap)
 // - 서식 도구 막대 + 'HTML 소스' 보기에서 직접 HTML 편집
 // - 링크·이미지는 브라우저 팝업 대신 도구 막대 아래 입력 칸으로 받는다
+// - 이미지 파일은 '내 PC에서 올리기' 버튼, 끌어다 놓기, 붙여넣기로 바로 올릴 수 있다 (R2 저장, /media/…)
 // - 저장 시 서버에서 허용 태그만 남기도록 다시 정제한다 (lib/posts.ts)
 
 export const EDITOR_IMAGES = [
@@ -26,6 +28,11 @@ export default function HtmlEditor({ value, onChange }: { value: string; onChang
   const [linkUrl, setLinkUrl] = useState('');
   const [imgUrl, setImgUrl] = useState('');
   const [imgAlt, setImgAlt] = useState('');
+  const [upMsg, setUpMsg] = useState('');
+  const [uploading, setUploading] = useState(0);
+  const fileInput = useRef<HTMLInputElement>(null);
+  // 붙여넣기·끌어다 놓기에서 부르는 업로드 함수 (에디터가 만들어진 뒤 채운다)
+  const uploadRef = useRef<(files: File[], pos?: number) => void>(() => {});
 
   const editor = useEditor({
     immediatelyRender: false, // Next.js 서버 렌더링과 충돌하지 않게
@@ -38,7 +45,23 @@ export default function HtmlEditor({ value, onChange }: { value: string; onChang
       TableKit.configure({ table: { resizable: false } }),
     ],
     content: value,
-    editorProps: { attributes: { class: 'he-content post-body' } },
+    editorProps: {
+      attributes: { class: 'he-content post-body' },
+      handlePaste: (_view, e) => {
+        const files = imageFiles(e.clipboardData);
+        if (!files.length) return false;
+        e.preventDefault();
+        uploadRef.current(files);
+        return true;
+      },
+      handleDrop: (view, e) => {
+        const files = imageFiles(e.dataTransfer);
+        if (!files.length) return false;
+        e.preventDefault();
+        uploadRef.current(files, view.posAtCoords({ left: e.clientX, top: e.clientY })?.pos);
+        return true;
+      },
+    },
     onUpdate: ({ editor: e }) => onChange(e.getHTML()),
   });
 
@@ -83,6 +106,25 @@ export default function HtmlEditor({ value, onChange }: { value: string; onChang
     else c().extendMarkRange('link').setLink({ href: /^(https?:|mailto:|tel:|\/)/i.test(url) ? url : `https://${url}` }).run();
     setPanel(null);
   }
+
+  uploadRef.current = async (files, pos) => {
+    setUpMsg('');
+    setUploading(files.length);
+    let done = 0;
+    for (const f of files) {
+      try {
+        const src = await uploadImage(f);
+        const chain = editor!.chain().focus();
+        if (pos !== undefined && done === 0) chain.setTextSelection(pos);
+        chain.setImage({ src, alt: imgAlt.trim() || undefined }).run();
+        done++;
+      } catch (e) {
+        setUpMsg(`${f.name}: ${(e as Error).message}`);
+      }
+      setUploading(n => n - 1);
+    }
+    if (done) { setImgAlt(''); setPanel(null); }
+  };
 
   function insertImage(src: string) {
     if (!src) return;
@@ -146,6 +188,15 @@ export default function HtmlEditor({ value, onChange }: { value: string; onChang
 
       {panel === 'image' && (
         <div className="he-panel he-panel-img">
+          <div className="he-upload">
+            <button type="button" className="he-ok" disabled={uploading > 0} onClick={() => fileInput.current?.click()}>
+              {uploading > 0 ? `올리는 중… (${uploading})` : '내 PC에서 올리기'}
+            </button>
+            <span>JPG · PNG · WEBP · GIF, 5MB 이하 · 여러 장 선택 가능 · 본문에 끌어다 놓거나 붙여넣어도 됩니다</span>
+            <input ref={fileInput} type="file" accept={ACCEPT} multiple hidden
+              onChange={e => { const fs = Array.from(e.target.files ?? []); e.target.value = ''; if (fs.length) uploadRef.current(fs); }} />
+          </div>
+          <p className="he-sub">사이트 기본 이미지</p>
           <div className="he-img-grid">
             {EDITOR_IMAGES.map(src => (
               <button key={src} type="button" title={src} onClick={() => insertImage(src)}>
@@ -162,6 +213,11 @@ export default function HtmlEditor({ value, onChange }: { value: string; onChang
           </div>
         </div>
       )}
+
+      {(uploading > 0 || upMsg) && panel !== 'image' && (
+        <div className={`he-up-status${upMsg ? ' err' : ''}`} role="status">{uploading > 0 ? `이미지 올리는 중… (${uploading})` : upMsg}</div>
+      )}
+      {panel === 'image' && upMsg && <div className="he-up-status err" role="alert">{upMsg}</div>}
 
       {mode === 'visual'
         ? <EditorContent editor={editor} className="he-area" />

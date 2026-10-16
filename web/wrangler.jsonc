@@ -1,4 +1,4 @@
-// Cloudflare Workers 배포 설정 — Next.js 서버(OpenNext) + D1 예약 저장소
+// Cloudflare Workers 배포 설정 — Next.js 서버(OpenNext) + D1 예약 저장소 + R2 이미지 저장소
 // 배포: npm run deploy:cf   /  DB 테이블 적용: npm run db:migrate
 {
   "name": "clearscan",
@@ -16,6 +16,10 @@
       "database_id": "24b4caa2-9b75-4f97-8fad-cf4d488f243e",
       "migrations_dir": "migrations"
     }
+  ],
+  // 건강 칼럼 이미지 업로드 저장소 (R2). 사이트에서는 /media/… 주소로 제공
+  "r2_buckets": [
+    { "binding": "MEDIA", "bucket_name": "clearscan-media" }
   ],
   "observability": { "enabled": true }
 }

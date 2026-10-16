@@ -2,9 +2,10 @@
 
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import ConfirmButton, { postJson } from '@/components/ConfirmButton';
 import { EDITOR_IMAGES } from './HtmlEditor';
+import { ACCEPT, uploadImage } from './uploadImage';
 
 // 에디터는 브라우저에서만 불러온다 (서버 렌더링 제외)
 const HtmlEditor = dynamic(() => import('./HtmlEditor'), { ssr: false, loading: () => <div className="he he-loading">에디터를 불러오는 중…</div> });
@@ -25,6 +26,23 @@ function PostForm({ initial, onDone }: { initial?: PostRowData; onDone?: () => v
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const [savedSlug, setSavedSlug] = useState(initial?.slug ?? '');
+  const [coverBusy, setCoverBusy] = useState(false);
+  const coverInput = useRef<HTMLInputElement>(null);
+
+  // 대표 이미지 직접 올리기
+  async function uploadCover(file: File) {
+    setCoverBusy(true);
+    setMsg('');
+    try {
+      const url = await uploadImage(file);
+      setF(x => ({ ...x, coverImage: url }));
+    } catch (e) {
+      setMsg((e as Error).message);
+    } finally {
+      setCoverBusy(false);
+    }
+  }
+  const uploadedCover = f.coverImage && !EDITOR_IMAGES.includes(f.coverImage) ? f.coverImage : '';
 
   async function save(status: 'draft' | 'published') {
     setBusy(true);
@@ -62,6 +80,14 @@ function PostForm({ initial, onDone }: { initial?: PostRowData; onDone?: () => v
         <span>대표 이미지 <em className="ce-em">(목록 썸네일 · 선택 안 하면 이미지 없이 표시)</em></span>
         <div>
           <button type="button" className={!f.coverImage ? 'on po-none' : 'po-none'} onClick={() => setF({ ...f, coverImage: '' })}>없음</button>
+          <button type="button" className="po-none po-upload" disabled={coverBusy} onClick={() => coverInput.current?.click()}>{coverBusy ? '올리는 중…' : '+ 직접 올리기'}</button>
+          <input ref={coverInput} type="file" accept={ACCEPT} hidden onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file) uploadCover(file); }} />
+          {uploadedCover && (
+            <button type="button" className="on" title={uploadedCover}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={uploadedCover} alt="" />
+            </button>
+          )}
           {EDITOR_IMAGES.map(src => (
             <button key={src} type="button" className={f.coverImage === src ? 'on' : ''} onClick={() => setF({ ...f, coverImage: src })} title={src}>
               {/* eslint-disable-next-line @next/next/no-img-element */}

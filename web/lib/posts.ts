@@ -36,7 +36,7 @@ const toPost = (r: Row): Post => ({
 // ---------- HTML 정제 ----------
 
 const SAFE_URL = /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#)/i;
-const SAFE_IMG = /^(https:\/\/|\/images\/)/i;
+const SAFE_IMG = /^(https:\/\/|\/images\/|\/media\/posts\/)/i; // 사이트 이미지 · 업로드 이미지 · https 주소
 
 const filter = new FilterXSS({
   whiteList: {
@@ -116,7 +116,7 @@ export async function savePost(input: PostInput, adminName: string): Promise<{ i
   if (textExcerpt(contentHtml, 10).length < 2 && !/<img /.test(contentHtml)) throw new PostError('본문을 입력해 주세요.');
   const summary = String(input.summary ?? '').trim().slice(0, 300) || textExcerpt(contentHtml, 120);
   const coverImage = String(input.coverImage ?? '').trim();
-  if (coverImage && !SAFE_IMG.test(coverImage)) throw new PostError('대표 이미지는 사이트 이미지나 https:// 주소만 쓸 수 있습니다.');
+  if (coverImage && !SAFE_IMG.test(coverImage)) throw new PostError('대표 이미지는 사이트 이미지, 업로드한 이미지, https:// 주소만 쓸 수 있습니다.');
   const status = input.status === 'published' ? 'published' : 'draft';
   const now = new Date().toISOString();
   const db = await getDB();

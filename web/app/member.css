@@ -518,3 +518,13 @@
 .ms-teaser li span { grid-column: 1; font-size: 12.5px; color: var(--on-dark-2); }
 .ms-teaser li .chev { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: var(--sky); }
 .ms-teaser .btn { width: 100%; margin-top: 16px; }
+
+/* ---------- 칼럼 에디터 이미지 업로드 ---------- */
+.he-upload { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
+.he-upload span { font-size: 12px; color: var(--text-3); }
+.he-sub { width: 100%; font-size: 12px; font-weight: 700; color: var(--text-2); margin-top: 2px; }
+.he-up-status { padding: 8px 12px; font-size: 12.5px; background: var(--primary-wash); color: var(--tag-fg); border-bottom: 1px solid var(--line); }
+.he-up-status.err { background: var(--danger-bg); color: var(--danger); }
+.he-content img { max-width: 100%; height: auto; border-radius: 10px; }
+.he-content img.ProseMirror-selectednode { outline: 3px solid var(--scan); }
+.po-upload { color: var(--primary) !important; border-color: var(--primary-line) !important; font-weight: 700; }

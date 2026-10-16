@@ -5,7 +5,8 @@
 set -euo pipefail
 HOST="${1:?서버 IP 또는 도메인을 넣어 주세요}"
 KEY="${OCI_SSH_KEY:-$HOME/.ssh/orae_oci}"
-SSH="ssh -i $KEY -o StrictHostKeyChecking=accept-new ubuntu@$HOST"
+SSH_USER="${OCI_SSH_USER:-opc}"   # Oracle Linux는 opc, Ubuntu는 ubuntu
+SSH="ssh -i $KEY -o StrictHostKeyChecking=accept-new $SSH_USER@$HOST"
 REL="$(date +%Y%m%d-%H%M%S)"
 OUT=".deploy/$REL"
 
@@ -22,7 +23,7 @@ cp scripts/migrate-sqlite.mjs "$OUT/migrate-sqlite.mjs"
 tar -czf ".deploy/$REL.tgz" -C "$OUT" .
 
 echo "▶ 전송"
-scp -i "$KEY" -o StrictHostKeyChecking=accept-new ".deploy/$REL.tgz" "ubuntu@$HOST:/tmp/orae-$REL.tgz"
+scp -i "$KEY" -o StrictHostKeyChecking=accept-new ".deploy/$REL.tgz" "$SSH_USER@$HOST:/tmp/orae-$REL.tgz"
 
 echo "▶ 서버에서 설치 · 마이그레이션 · 전환"
 $SSH "sudo bash -s" <<EOF
