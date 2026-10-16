@@ -6,6 +6,7 @@ import Image from '@tiptap/extension-image';
 import { TableKit } from '@tiptap/extension-table';
 import { useRef, useState } from 'react';
 import { ACCEPT, imageFiles, uploadImage } from './uploadImage';
+import AiImageBox from './AiImageBox';
 
 // 관리자 글쓰기용 HTML 문서 에디터 (TipTap)
 // - 서식 도구 막대 + 'HTML 소스' 보기에서 직접 HTML 편집
@@ -21,7 +22,7 @@ export const EDITOR_IMAGES = [
 
 type Panel = null | 'link' | 'image';
 
-export default function HtmlEditor({ value, onChange }: { value: string; onChange: (html: string) => void }) {
+export default function HtmlEditor({ value, onChange, onUseAsCover }: { value: string; onChange: (html: string) => void; onUseAsCover?: (url: string) => void }) {
   const [mode, setMode] = useState<'visual' | 'html'>('visual');
   const [source, setSource] = useState(value);
   const [panel, setPanel] = useState<Panel>(null);
@@ -30,6 +31,7 @@ export default function HtmlEditor({ value, onChange }: { value: string; onChang
   const [imgAlt, setImgAlt] = useState('');
   const [upMsg, setUpMsg] = useState('');
   const [uploading, setUploading] = useState(0);
+  const [imgTab, setImgTab] = useState<'file' | 'ai'>('file');
   const fileInput = useRef<HTMLInputElement>(null);
   // 붙여넣기·끌어다 놓기에서 부르는 업로드 함수 (에디터가 만들어진 뒤 채운다)
   const uploadRef = useRef<(files: File[], pos?: number) => void>(() => {});
@@ -188,6 +190,16 @@ export default function HtmlEditor({ value, onChange }: { value: string; onChang
 
       {panel === 'image' && (
         <div className="he-panel he-panel-img">
+          <div className="he-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected={imgTab === 'file'} className={imgTab === 'file' ? 'on' : ''} onClick={() => setImgTab('file')}>파일 · 기본 이미지</button>
+            <button type="button" role="tab" aria-selected={imgTab === 'ai'} className={imgTab === 'ai' ? 'on' : ''} onClick={() => setImgTab('ai')}>AI로 만들기</button>
+          </div>
+          {imgTab === 'ai' ? (
+            <AiImageBox
+              onInsert={(src, alt) => c().setImage({ src, alt: alt || undefined }).run()}
+              onCover={onUseAsCover}
+            />
+          ) : (<>
           <div className="he-upload">
             <button type="button" className="he-ok" disabled={uploading > 0} onClick={() => fileInput.current?.click()}>
               {uploading > 0 ? `올리는 중… (${uploading})` : '내 PC에서 올리기'}
@@ -211,6 +223,7 @@ export default function HtmlEditor({ value, onChange }: { value: string; onChang
             <button type="button" className="he-ok" disabled={!/^https:\/\//i.test(imgUrl.trim())} onClick={() => insertImage(imgUrl.trim())}>넣기</button>
             <button type="button" onClick={() => setPanel(null)}>닫기</button>
           </div>
+          </>)}
         </div>
       )}
 

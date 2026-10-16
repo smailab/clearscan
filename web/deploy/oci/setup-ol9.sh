@@ -11,15 +11,25 @@ if ! swapon --show | grep -q /swapfile; then
   grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
 fi
 
-# 패키지: Nginx, SQLite, EPEL(certbot)
-dnf -y install oracle-epel-release-el9 >/dev/null
-dnf -y install nginx sqlite tar curl policycoreutils-python-utils >/dev/null
-dnf -y install certbot python3-certbot-nginx >/dev/null
+# 메모리가 작아 dnf가 멈추지 않도록: 설치하는 동안 OCI 에이전트를 잠시 멈추고, 필요한 저장소만 쓴다
+systemctl stop oracle-cloud-agent oracle-cloud-agent-updater tuned 2>/dev/null || true
+DNF="dnf -y --setopt=install_weak_deps=False --disablerepo=ol9_UEKR8,ol9_ksplice,ol9_oci_included,ol9_addons"
+
+# 패키지: Nginx, SQLite
+$DNF install nginx sqlite tar curl policycoreutils-python-utils python3-pip
+
+# certbot은 EPEL 대신 가벼운 Python 가상환경에 설치
+if [ ! -x /opt/certbot/bin/certbot ]; then
+  python3 -m venv /opt/certbot
+  /opt/certbot/bin/pip install --quiet --upgrade pip
+  /opt/certbot/bin/pip install --quiet certbot certbot-nginx
+  ln -sf /opt/certbot/bin/certbot /usr/local/bin/certbot
+fi
 
 # Node.js 24 (NodeSource)
 if ! command -v node >/dev/null || [ "$(node -p 'process.versions.node.split(".")[0]')" -lt 24 ]; then
-  curl -fsSL https://rpm.nodesource.com/setup_24.x | bash - >/dev/null
-  dnf -y install nodejs >/dev/null
+  curl -fsSL https://rpm.nodesource.com/setup_24.x | bash -
+  $DNF install nodejs
 fi
 
 # 실행 계정과 폴더
@@ -103,4 +113,5 @@ systemctl reload nginx
 firewall-cmd --permanent --add-service=http --add-service=https >/dev/null
 firewall-cmd --reload >/dev/null
 
+systemctl start oracle-cloud-agent oracle-cloud-agent-updater tuned 2>/dev/null || true
 echo "설정 완료 — node $(node -v), $(nginx -v 2>&1)"

@@ -47,7 +47,12 @@ async function nodeFs() {
 export async function saveImage(file: File): Promise<string> {
   if (!file || typeof file.arrayBuffer !== 'function') throw new MediaError('이미지 파일을 선택해 주세요.');
   if (file.size > MAX_BYTES) throw new MediaError('이미지는 5MB 이하만 올릴 수 있습니다.');
-  const bytes = new Uint8Array(await file.arrayBuffer());
+  return saveImageBytes(new Uint8Array(await file.arrayBuffer()));
+}
+
+// 이미지 바이트를 저장하고 /media/… 주소를 돌려준다 (업로드 · AI 생성 공용)
+export async function saveImageBytes(bytes: Uint8Array): Promise<string> {
+  if (bytes.byteLength > MAX_BYTES * 2) throw new MediaError('이미지가 너무 큽니다.');
   const kind = sniff(bytes);
   if (!kind) throw new MediaError('JPG · PNG · WEBP · GIF 이미지만 올릴 수 있습니다.');
 

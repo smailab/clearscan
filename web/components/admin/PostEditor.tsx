@@ -98,7 +98,7 @@ function PostForm({ initial, onDone }: { initial?: PostRowData; onDone?: () => v
       </div>
 
       <div className="po-editor-label">본문</div>
-      <HtmlEditor value={f.contentHtml} onChange={html => setF(x => ({ ...x, contentHtml: html }))} />
+      <HtmlEditor value={f.contentHtml} onChange={html => setF(x => ({ ...x, contentHtml: html }))} onUseAsCover={url => setF(x => ({ ...x, coverImage: url }))} />
 
       <div className="re-foot">
         <span className="admin-msg">{msg}</span>
