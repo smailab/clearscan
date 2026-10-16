@@ -11,7 +11,8 @@
     "preview:cf": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "db:migrate": "wrangler d1 migrations apply clearscan --remote",
     "db:migrate:local": "wrangler d1 migrations apply clearscan --local",
-    "admin:create": "node scripts/create-admin.mjs"
+    "admin:create": "node scripts/create-admin.mjs",
+    "deploy:oci": "bash deploy/oci/deploy.sh"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.11",

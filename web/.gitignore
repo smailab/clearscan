@@ -12,3 +12,7 @@ out/
 
 # 디자인 검토 기록 (로컬)
 .impeccable/
+
+# Oracle Cloud 배포 임시 파일
+.deploy/
+.deploy-build.log
