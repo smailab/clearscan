@@ -2,7 +2,7 @@
   /* 브랜드 — 로고 팔레트 (남색 원 · 하늘 원 · 스캔 막대) */
   --navy: #14284b;
   --navy-mid: #1c3560;
-  --navy-deep: var(--navy-deep);
+  --navy-deep: #0b1830;
   --sky: #a9cdf0;
   --scan: #7aa6dc;
   /* 행동 색 — 남색 계열 딥 코발트 (흰 글자 8.75:1) */

@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { site } from '@/lib/data';
 import Logo from './Logo';
-import { LineCalendar, LineCard, LineHelp, LineHome, LinePen, LinePin, LineScan } from './icons';
+import { LineCalendar, LineCard, LineCrown, LineHelp, LineHome, LinePen, LinePin, LineScan } from './icons';
 
 const LINKS = [
   { href: '/', label: '홈', Icon: LineHome },
+  { href: '/membership', label: '멤버십 가입', Icon: LineCrown },
   { href: '/booking', label: '검진 예약', Icon: LineCalendar },
   { href: '/#plans', label: '검진 상품 · 요금', Icon: LineCard },
   { href: '/how-it-works', label: '이용 방법 · 검사 장기', Icon: LineScan },

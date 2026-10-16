@@ -75,3 +75,4 @@ export const LinePen = (p: LP) => <Line {...p}><path d="M5 19.5h14M6.5 15.5 15.8
 export const LineHelp = (p: LP) => <Line {...p}><circle cx="12" cy="12" r="8.5" /><path d="M9.6 9.5a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.1-2.4 3.6M12 17h.01" /></Line>;
 export const LineLock = (p: LP) => <Line size={14} {...p}><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" /></Line>;
 export const LineSpark = (p: LP) => <Line size={14} {...p}><path d="M12 3.5v4M12 16.5v4M3.5 12h4M16.5 12h4M7 7l2.2 2.2M14.8 14.8 17 17M17 7l-2.2 2.2M9.2 14.8 7 17" /></Line>;
+export const LineCrown = (p: LP) => <Line {...p}><path d="M4 8.5 8 12l4-6 4 6 4-3.5-1.5 9.5h-13z" /><path d="M6 20.5h12" /></Line>;

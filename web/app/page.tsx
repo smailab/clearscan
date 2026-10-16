@@ -13,13 +13,14 @@ import { facts, factsNote, faqs, reviews, reviewsNote, site, steps, won } from '
 import { currentUser } from '@/lib/auth/members';
 import { getPricing } from '@/lib/pricing';
 import { listProducts, toPublic } from '@/lib/products';
+import { listTiers } from '@/lib/memberships';
 
 // 요금은 회원에게만 보여주므로 요청마다 로그인 여부를 확인한다
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const user = await currentUser();
-  const [pricing, products, posts] = await Promise.all([user ? getPricing() : null, listProducts(), listPosts({ limit: 3 })]);
+  const [pricing, products, posts, tiers] = await Promise.all([user ? getPricing() : null, listProducts(), listPosts({ limit: 3 }), listTiers()]);
 
   return (
     <Shell>
@@ -74,6 +75,29 @@ export default async function Home() {
       <section className="sec" id="plans">
         <Plans products={products.map(toPublic)} prices={pricing?.prices ?? null} />
       </section>
+
+      {/* 멤버십 */}
+      {tiers.length > 0 && (
+        <section className="sec" id="membership">
+          <div className="ms-teaser">
+            <p className="ms-teaser-eyebrow">ORAE MEMBERSHIP</p>
+            <h2>검진 한 번이 아니라,<br />1년 내내 이어지는 관리</h2>
+            <p className="ms-teaser-sub">정밀 검진 · 전문의 결과 상담 · 전담 메디컬 컨시어지를 하나의 연간 멤버십으로.</p>
+            <ul>
+              {tiers.map(t => (
+                <li key={t.id}>
+                  <Link href="/membership#tiers">
+                    <b>{t.name}<small>{t.nameKo}</small></b>
+                    <span>{t.tagline}</span>
+                    <Chevron className="chev" size={16} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <Link className="btn ms-btn-light" href="/membership">멤버십 자세히 보기 <Chevron size={16} /></Link>
+          </div>
+        </section>
+      )}
 
       {/* 커플 플랜 */}
       <section className="sec" id="couple">

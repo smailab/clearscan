@@ -13,6 +13,9 @@ import { describeDiscount, myCoupons } from '@/lib/coupons';
 import { myBookings } from '@/lib/booking/service';
 import { site, won } from '@/lib/data';
 import type { Booking } from '@/lib/booking/types';
+import { MembershipCancel } from '@/components/membership/MembershipParts';
+import { myApplications } from '@/lib/memberships';
+import { APP_STATUS } from '@/lib/memberships-shared';
 
 export const metadata: Metadata = { title: '내 페이지 | ORAE LONGEVITY CLUB', robots: { index: false } };
 export const dynamic = 'force-dynamic';
@@ -21,7 +24,8 @@ export default async function MyPage() {
   const user = await currentUser();
   if (!user) redirect('/login?next=/my');
 
-  const [bookings, results, names, coupons] = await Promise.all([myBookings(user), resultsByUser(user.id), productNames(), myCoupons(user.id)]);
+  const [bookings, results, names, coupons, apps] = await Promise.all([myBookings(user), resultsByUser(user.id), productNames(), myCoupons(user.id), myApplications(user.id)]);
+  const membership = apps.find(a => a.status !== 'cancelled' && !(a.status === 'active' && a.expiresAt && a.expiresAt < kstToday()));
   const nameOf = (b: Booking) => b.planName ?? names.get(b.planId) ?? b.planId;
   const today = kstToday();
   const upcoming = bookings.filter(b => b.status === 'confirmed' && b.date >= today).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
@@ -44,6 +48,29 @@ export default async function MyPage() {
           <div><b>{bookings.filter(b => b.status === 'confirmed').length}</b><span>전체 예약</span></div>
           <div><b>{results.length}</b><span>검사 결과</span></div>
         </div>
+      </section>
+
+      <section className="sec" id="membership">
+        <div className="sec-head"><h2>내 멤버십</h2><Link className="more" href="/membership">멤버십 안내 ›</Link></div>
+        {membership ? (
+          <div className={`ms-mine${membership.status === 'active' ? ' active' : ''}`}>
+            <span className={`ms-status ${APP_STATUS[membership.status].tone}`}>{APP_STATUS[membership.status].label}</span>
+            <p className="nm">{membership.tierName}{membership.seats > 1 ? ` · ${membership.seats}인` : ''}</p>
+            <p className="meta">
+              {membership.status === 'active'
+                ? `${membership.startedAt} ~ ${membership.expiresAt}`
+                : membership.status === 'contacted'
+                  ? '전담 컨시어지와 상담이 진행 중이에요.'
+                  : `접수 완료 · ${membership.contactTime}에 연락드려요.`}
+            </p>
+            {membership.status === 'requested' && <MembershipCancel id={membership.id} />}
+          </div>
+        ) : (
+          <Link className="ms-join-card" href="/membership">
+            <span><b>ORAE 멤버십</b>정밀 검진과 전담 컨시어지가 1년 내내 함께해요.</span>
+            <Chevron size={18} />
+          </Link>
+        )}
       </section>
 
       <section className="sec" id="results">

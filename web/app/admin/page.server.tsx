@@ -16,6 +16,8 @@ import { listUsers } from '@/lib/auth/members';
 import { won } from '@/lib/data';
 import { AdminLogout, AdminRowActions, ChangePasswordForm, NewAdminForm } from '@/components/admin/AdminParts';
 import BookingResultRow from '@/components/booking/ResultEditor';
+import { ApplicationRow, NewTierBox, TierRow } from '@/components/admin/MembershipAdmin';
+import { listApplications, listTiers } from '@/lib/memberships';
 
 export const metadata: Metadata = { title: '관리자 | ORAE LONGEVITY CLUB', robots: { index: false } };
 export const dynamic = 'force-dynamic';
@@ -39,6 +41,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </div>
       <nav className="admin-tabs">
         <a href="/admin" className={tab === 'bookings' ? 'on' : ''}>예약 · 검사 결과</a>
+        <a href="/admin?tab=membership" className={tab === 'membership' ? 'on' : ''}>멤버십</a>
         <a href="/admin?tab=products" className={tab === 'products' ? 'on' : ''}>상품 관리</a>
         <a href="/admin?tab=coupons" className={tab === 'coupons' ? 'on' : ''}>쿠폰</a>
         <a href="/admin?tab=centers" className={tab === 'centers' ? 'on' : ''}>검진 센터</a>
@@ -48,6 +51,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <a href="/admin?tab=account" className={tab === 'account' ? 'on' : ''}>내 계정</a>
       </nav>
       {tab === 'members' ? <Members q={q} />
+        : tab === 'membership' ? <Membership />
         : tab === 'products' ? <Products owner={admin.role === 'owner'} />
         : tab === 'coupons' ? <Coupons />
         : tab === 'centers' ? <Centers owner={admin.role === 'owner'} />
@@ -190,6 +194,46 @@ async function Admins({ me }: { me: Admin }) {
         </table>
       </div>
       <NewAdminForm />
+    </>
+  );
+}
+
+async function Membership() {
+  const [apps, tiers] = await Promise.all([listApplications(), listTiers({ includeInactive: true })]);
+  const today = kstToday();
+  const waiting = apps.filter(a => a.status === 'requested').length;
+  const activeCount = apps.filter(a => a.status === 'active' && (!a.expiresAt || a.expiresAt >= today)).length;
+  return (
+    <>
+      <div className="admin-bar">
+        <p className="admin-stat">상담 대기 <b>{waiting}</b>건 · 상담 중 {apps.filter(a => a.status === 'contacted').length}건 · 이용 중 {activeCount}명 — 가입 확정하면 시작일부터 1년 멤버십이 시작됩니다.</p>
+      </div>
+      <div className="admin-table">
+        <table>
+          <thead>
+            <tr><th>신청일</th><th>회원</th><th>멤버십</th><th>연락 희망</th><th>관심 분야 · 메모</th><th>상태</th><th>처리</th></tr>
+          </thead>
+          <tbody>
+            {apps.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32 }}>멤버십 신청이 없습니다.</td></tr>}
+            {apps.map(a => <ApplicationRow key={a.id} a={a} today={today} />)}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="admin-bar" style={{ marginTop: 28 }}>
+        <p className="admin-stat">멤버십 티어 {tiers.length}개 — 이름·회비·혜택을 고치면 멤버십 페이지에 바로 반영됩니다. 연 회비를 비우면 &lsquo;상담 후 안내&rsquo;로 표시됩니다.</p>
+      </div>
+      <div className="admin-table">
+        <table>
+          <thead>
+            <tr><th>순서</th><th>티어</th><th>연 회비</th><th>기본 인원</th><th>혜택</th><th>상태</th><th>관리</th></tr>
+          </thead>
+          <tbody>
+            {tiers.map(t => <TierRow key={t.id} t={t} />)}
+          </tbody>
+        </table>
+      </div>
+      <NewTierBox />
     </>
   );
 }
