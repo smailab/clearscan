@@ -6,6 +6,16 @@ const nextConfig: NextConfig = {
   pageExtensions: ['server.tsx', 'server.ts', 'tsx', 'ts'],
   // Cloudflare Workers에는 이미지 최적화 서버가 없으므로 원본을 그대로 제공
   images: { unoptimized: true },
+  // LongeviTube 정적 페이지(public/longevitube, public/admin/longevitube)의 폴더 주소 → index.html
+  // (Cloudflare 에서는 정적 자산이 먼저 응답하므로 일반 Node 서버 배포에서만 쓰인다)
+  async rewrites() {
+    return [
+      { source: '/longevitube', destination: '/longevitube/index.html' },
+      { source: '/longevitube/', destination: '/longevitube/index.html' },
+      { source: '/admin/longevitube', destination: '/admin/longevitube/index.html' },
+      { source: '/admin/longevitube/', destination: '/admin/longevitube/index.html' },
+    ];
+  },
   // Oracle Cloud 등 일반 Node 서버 배포: BUILD_TARGET=node로 빌드하면 .next/standalone에 실행 파일을 만든다
   ...(process.env.BUILD_TARGET === 'node' ? { output: 'standalone' as const } : {}),
 };

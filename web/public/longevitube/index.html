@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LongeviTube | 장수 · 건강수명 영상 큐레이션</title>
+  <meta name="description" content="노화 과학, 운동, 영양, 수면, 뇌 건강까지 — 오래, 건강하게 사는 법을 다루는 좋은 영상만 모았습니다.">
+  <meta property="og:title" content="LongeviTube | 장수 · 건강수명 영상">
+  <meta property="og:description" content="Healthy lifespan을 위한 엄선된 강의 · 인터뷰 · 다큐 영상 모음">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%2316a36a%22/%3E%3Cpath d=%22M12 9l12 7-12 7z%22 fill=%22white%22/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <script>
+    /* 캐시 무효화: CSS·JS 주소에 1분 단위로 바뀌는 버전을 붙여, 머지 후 예전 파일이 남지 않게 함 */
+    window.LT_V = Math.floor(Date.now() / 60000);
+    document.write('<link rel="stylesheet" href="/longevitube/css/style.css?v=' + window.LT_V + '">');
+  </script>
+  <noscript><link rel="stylesheet" href="/longevitube/css/style.css"></noscript>
+  <script>
+    try { var t = localStorage.getItem("lt-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="icon-btn" id="menuBtn" aria-label="메뉴 열기">
+        <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <a href="/longevitube/#/" class="logo" aria-label="LongeviTube 홈">
+        <span class="logo-mark"><svg viewBox="0 0 24 24"><path d="M9 7l8 5-8 5z"/></svg></span>
+        <span class="logo-text">Longevi<b>Tube</b></span>
+      </a>
+    </div>
+    <form class="search" id="searchForm" role="search">
+      <input type="search" id="searchInput" placeholder="검색 (예: 수면, Zone 2, ApoB)" aria-label="영상 검색">
+      <button type="submit" aria-label="검색">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      </button>
+    </form>
+    <div class="topbar-right">
+      <button class="icon-btn search-toggle" id="searchToggle" aria-label="검색">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      </button>
+      <button class="btn-add" id="addBtn">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>영상 추가</span>
+      </button>
+      <button class="icon-btn" id="themeBtn" aria-label="다크 모드 전환">
+        <svg viewBox="0 0 24 24"><path d="M21 13A9 9 0 1111 3a7 7 0 0010 10z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar" aria-label="사이드 메뉴"></nav>
+    <div class="scrim" id="scrim"></div>
+    <main class="content" id="app" tabindex="-1"></main>
+  </div>
+
+  <!-- 영상 추가 -->
+  <dialog id="addDialog" class="dialog">
+    <form method="dialog" id="addForm">
+      <h2>영상 추가</h2>
+      <p class="muted">유튜브 링크를 붙여넣으면 이 브라우저의 내 목록에 저장됩니다. 사이트 전체에 올리려면 관리자 페이지에서 추가하세요.</p>
+      <label>유튜브 링크 *<input name="url" required placeholder="https://www.youtube.com/watch?v=..."></label>
+      <label>제목 *<input name="title" required maxlength="120"></label>
+      <div class="row2">
+        <label>카테고리<select name="cat" id="addCat"></select></label>
+        <label>난이도<select name="level"><option>입문</option><option>중급</option><option>심화</option></select></label>
+      </div>
+      <label>연사 / 채널<input name="speaker" maxlength="60"></label>
+      <label>설명<textarea name="desc" rows="3"></textarea></label>
+      <label>핵심 요약 (줄바꿈으로 구분)<textarea name="points" rows="3"></textarea></label>
+      <p class="form-error" id="addError" hidden></p>
+      <div class="dialog-actions">
+        <button value="cancel" formnovalidate class="btn-ghost">취소</button>
+        <button value="ok" class="btn-primary" id="addSubmit">저장</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    /* 영상·카테고리 데이터는 D1 DB에서 (관리자 페이지에서 수정하면 바로 반영) */
+    document.write('<script src="/api/longevitube/catalog?v=' + window.LT_V + '"><\/script>');
+    document.write('<script src="/longevitube/js/app.js?v=' + window.LT_V + '"><\/script>');
+  </script>
+</body>
+</html>
