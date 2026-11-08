@@ -14,7 +14,7 @@ export const site = {
 export type Slide = { eyebrow: string; l1: string; l2: string; image: string; alt: string };
 
 export const slides: Slide[] = [
-  { eyebrow: '조기 발견을 위한', l1: '단 22분,', l2: '전신 MRI 검진', image: '/images/scan-woman.png', alt: 'MRI 촬영을 준비하는 수검자' },
+  { eyebrow: '조기 발견을 위한', l1: '단 30분,', l2: '전신 MRI 검진', image: '/images/scan-woman.png', alt: 'MRI 촬영을 준비하는 수검자' },
   { eyebrow: '방사선 노출 없이', l1: '머리부터 골반까지', l2: '최대 13개 장기', image: '/images/fullbody.webp', alt: '전신 MRI 영상' },
   { eyebrow: '이해하기 쉬운 리포트', l1: '전문의 판독 후', l2: '1:1 결과 상담', image: '/images/app-report.png', alt: '앱으로 받는 검진 리포트' },
 ];
