@@ -1,4 +1,6 @@
 import Image from 'next/image';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Shell from '@/components/Shell';
 import HeroSlider from '@/components/HeroSlider';
@@ -19,6 +21,9 @@ import { listTiers } from '@/lib/memberships';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
+  // longevitube.로 시작하는 주소(서브도메인)로 들어오면 유튜브형 LongeviTube 화면을 보여준다
+  if (/^longevitube\./i.test((await headers()).get('host') ?? '')) redirect('/longevitube/');
+
   const user = await currentUser();
   const [pricing, products, posts, tiers] = await Promise.all([user ? getPricing() : null, listProducts(), listPosts({ limit: 3 }), listTiers()]);
 

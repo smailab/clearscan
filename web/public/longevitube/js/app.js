@@ -110,13 +110,18 @@
         ${link("#/history", "🕘", "시청 기록", "history")}
         ${link("#/liked", "♥", "좋아요 표시한 영상", "liked")}
       </div>
+      <div class="side-group"><div class="side-title">ORAE LONGEVITY CLUB</div>
+        ${link("/", "🩺", "ORAE 홈", "orae-home")}
+        ${link("/booking", "📅", "검진 예약", "orae-booking")}
+        ${link("/membership", "👑", "멤버십 가입", "orae-membership")}
+      </div>
       <div class="side-group"><div class="side-title">카테고리</div>
         ${CATEGORIES.map(c => link("#/c/" + c.id, c.icon, c.name, "c:" + c.id)).join("")}
       </div>
       <div class="side-group"><div class="side-title">연사 · 채널</div>
         ${speakers().slice(0, 14).map(s => `<a class="side-link ${route === "s:" + s ? "active" : ""}" href="#/s/${encodeURIComponent(s)}">${avatar(s)}<span>${esc(s)}</span></a>`).join("")}
       </div>
-      <div class="side-foot">LongeviTube는 장수·건강수명 관련 영상을 모은 큐레이션 사이트입니다. 영상 내용은 의학적 진단·치료를 대신하지 않습니다.<br><br>© LongeviTube · <a href="/admin/longevitube/">관리자</a></div>`;
+      <div class="side-foot">LongeviTube는 ORAE LONGEVITY CLUB이 운영하는 장수·건강수명 영상 큐레이션입니다. 영상 내용은 의학적 진단·치료를 대신하지 않습니다.<br><br>© LongeviTube · <a href="/admin/longevitube/">관리자</a></div>`;
   }
 
   /* ── 페이지 */

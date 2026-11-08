@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { site } from '@/lib/data';
 import Logo from './Logo';
-import { LineCalendar, LineCard, LineCrown, LineHelp, LineHome, LinePen, LinePin, LineScan } from './icons';
+import { LineCalendar, LineCard, LineCrown, LineHelp, LineHome, LinePen, LinePin, LinePlay, LineScan } from './icons';
 
 const LINKS = [
   { href: '/', label: '홈', Icon: LineHome },
@@ -15,6 +15,7 @@ const LINKS = [
   { href: '/how-it-works', label: '이용 방법 · 검사 장기', Icon: LineScan },
   { href: '/centers', label: '검진 센터', Icon: LinePin },
   { href: '/posts', label: '건강 칼럼', Icon: LinePen },
+  { href: '/longevitube/', label: 'LongeviTube 건강 영상', Icon: LinePlay },
   { href: '/#faq', label: '자주 묻는 질문', Icon: LineHelp },
 ];
 
