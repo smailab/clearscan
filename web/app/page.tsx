@@ -16,6 +16,8 @@ import { currentUser } from '@/lib/auth/members';
 import { getPricing } from '@/lib/pricing';
 import { listProducts, toPublic } from '@/lib/products';
 import { listTiers } from '@/lib/memberships';
+import { listVideos } from '@/lib/videos';
+import { thumbUrl } from '@/lib/videos-shared';
 
 // 요금은 회원에게만 보여주므로 요청마다 로그인 여부를 확인한다
 export const dynamic = 'force-dynamic';
@@ -25,7 +27,7 @@ export default async function Home() {
   if (/^longevitube\./i.test((await headers()).get('host') ?? '')) redirect('/longevitube/');
 
   const user = await currentUser();
-  const [pricing, products, posts, tiers] = await Promise.all([user ? getPricing() : null, listProducts(), listPosts({ limit: 3 }), listTiers()]);
+  const [pricing, products, posts, tiers, videos] = await Promise.all([user ? getPricing() : null, listProducts(), listPosts({ limit: 3 }), listTiers(), listVideos()]);
 
   return (
     <Shell>
@@ -101,6 +103,24 @@ export default async function Home() {
             </ul>
             <Link className="btn ms-btn-light" href="/membership">멤버십 자세히 보기 <Chevron size={16} /></Link>
           </div>
+        </section>
+      )}
+
+      {/* LongeviTube */}
+      {videos.length > 0 && (
+        <section className="sec" id="videos">
+          <div className="sec-head"><h2>LongeviTube 건강 영상</h2><Link className="more" href="/videos">전체 {videos.length}편 ›</Link></div>
+          <p className="sec-sub">노화 과학 · 영양 · 수면 · 뇌 건강 — 건강수명을 늘리는 강의와 인터뷰를 골라 모았습니다.</p>
+          <HScroll label="LongeviTube 영상">
+            {videos.slice(0, 10).map(v => (
+              <Link key={v.id} href={`/videos/${v.id}`} className="vd-mini">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={thumbUrl(v.yt)} alt="" loading="lazy" width={208} height={117} />
+                <b>{v.title}</b>
+                <small>{v.speaker}</small>
+              </Link>
+            ))}
+          </HScroll>
         </section>
       )}
 

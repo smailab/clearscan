@@ -15,7 +15,7 @@ const LINKS = [
   { href: '/how-it-works', label: '이용 방법 · 검사 장기', Icon: LineScan },
   { href: '/centers', label: '검진 센터', Icon: LinePin },
   { href: '/posts', label: '건강 칼럼', Icon: LinePen },
-  { href: '/longevitube/', label: 'LongeviTube 건강 영상', Icon: LinePlay },
+  { href: '/videos', label: 'LongeviTube 건강 영상', Icon: LinePlay },
   { href: '/#faq', label: '자주 묻는 질문', Icon: LineHelp },
 ];
 
