@@ -46,6 +46,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <a href="/admin?tab=coupons" className={tab === 'coupons' ? 'on' : ''}>쿠폰</a>
         <a href="/admin?tab=centers" className={tab === 'centers' ? 'on' : ''}>검진 센터</a>
         <a href="/admin?tab=posts" className={tab === 'posts' ? 'on' : ''}>건강 칼럼</a>
+        <a href="/admin/longevitube/">LongeviTube 영상</a>
         <a href="/admin?tab=members" className={tab === 'members' ? 'on' : ''}>회원 관리</a>
         {admin.role === 'owner' && <a href="/admin?tab=admins" className={tab === 'admins' ? 'on' : ''}>관리자 계정</a>}
         <a href="/admin?tab=account" className={tab === 'account' ? 'on' : ''}>내 계정</a>

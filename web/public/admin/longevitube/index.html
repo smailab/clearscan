@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>LongeviTube 관리자</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%2316a36a%22/%3E%3Cpath d=%22M12 9l12 7-12 7z%22 fill=%22white%22/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+  <script>
+    window.LT_V = Math.floor(Date.now() / 60000);
+    document.write('<link rel="stylesheet" href="/longevitube/css/style.css?v=' + window.LT_V + '">');
+    document.write('<link rel="stylesheet" href="/longevitube/css/admin.css?v=' + window.LT_V + '">');
+    try { var t = localStorage.getItem("lt-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body class="admin">
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="/longevitube/" class="logo" aria-label="LongeviTube 사이트로">
+        <span class="logo-mark"><svg viewBox="0 0 24 24"><path d="M9 7l8 5-8 5z"/></svg></span>
+        <span class="logo-text">Longevi<b>Tube</b></span>
+      </a>
+      <span class="admin-badge">관리자</span>
+    </div>
+    <div class="topbar-right" id="topActions" hidden>
+      <span class="dirty" id="dirty"></span>
+      <button class="btn-ghost" id="discardBtn">변경 취소</button>
+      <button class="btn-primary" id="publishBtn">게시하기</button>
+      <button class="icon-btn" id="menuMore" aria-label="더 보기" aria-haspopup="true">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      </button>
+      <div class="more-menu" id="moreMenu" hidden>
+        <button id="reloadBtn">최신 내용 다시 불러오기</button>
+        <a href="/admin" class="menu-link">ClearScan 관리자로</a>
+        <button id="downloadBtn">data.js 내려받기</button>
+        <button id="logoutBtn">로그아웃</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-main" id="admin" tabindex="-1">
+    <p class="admin-meta"><span id="who">불러오는 중…</span> <span class="muted small" id="lastPub"></span></p>
+    <!-- 편집 화면 -->
+    <section id="editor" hidden>
+      <nav class="tabs" role="tablist">
+        <button role="tab" class="tab active" data-tab="videos" aria-selected="true">영상 <span id="videoCount"></span></button>
+        <button role="tab" class="tab" data-tab="cats" aria-selected="false">카테고리 <span id="catCount"></span></button>
+      </nav>
+
+      <div id="tab-videos">
+        <div class="admin-toolbar">
+          <input type="search" id="vSearch" placeholder="제목·연사·채널·태그 검색">
+          <select id="vCat"><option value="">모든 카테고리</option></select>
+          <button class="btn-primary" id="addVideoBtn">+ 새 영상</button>
+        </div>
+        <p class="muted small">목록 순서가 사이트의 ‘인기순’ 순서입니다. ↑↓로 순서를 바꿀 수 있습니다 (검색·필터 중에는 이동 버튼이 숨겨집니다).</p>
+        <ol class="vlist" id="vlist"></ol>
+      </div>
+
+      <div id="tab-cats" hidden>
+        <div class="admin-toolbar">
+          <button class="btn-primary" id="addCatBtn">+ 새 카테고리</button>
+        </div>
+        <p class="muted small">순서는 사이트의 카테고리 칩·사이드바 순서입니다. 이름·아이콘·색상은 바로 수정할 수 있고, id는 링크 주소라 바꿀 수 없습니다.</p>
+        <ol class="clist" id="clist"></ol>
+      </div>
+    </section>
+  </main>
+
+  <!-- 영상 편집 -->
+  <dialog id="videoDialog" class="dialog wide">
+    <form method="dialog" id="videoForm">
+      <h2 id="videoDialogTitle">영상 수정</h2>
+      <label>유튜브 링크 또는 영상 ID *<input name="yt" required placeholder="https://www.youtube.com/watch?v=..."></label>
+      <label>제목 (사이트 표시용) *<input name="title" required maxlength="200"></label>
+      <label>원제<input name="orig" maxlength="300"></label>
+      <div class="row2">
+        <label>연사<input name="speaker" maxlength="80"></label>
+        <label>채널<input name="channel" maxlength="80"></label>
+      </div>
+      <div class="row3">
+        <label>대표 카테고리<select name="cat" id="fCat"></select></label>
+        <label>난이도<select name="level"><option>입문</option><option>중급</option><option>심화</option></select></label>
+        <label>형식<input name="format" list="formats" maxlength="20"></label>
+      </div>
+      <datalist id="formats"><option>강연</option><option>팟캐스트</option><option>인터뷰</option><option>애니메이션</option><option>다큐</option><option>클립</option><option>토론</option></datalist>
+      <fieldset><legend>추가 카테고리 (함께 표시)</legend><div class="checks" id="fCats"></div></fieldset>
+      <label>설명<textarea name="desc" rows="4"></textarea></label>
+      <label>태그 (쉼표로 구분 · 한국어 영상은 ‘한국어’ 포함)<input name="tags"></label>
+      <p class="form-error" id="videoError" hidden></p>
+      <div class="dialog-actions">
+        <button value="cancel" formnovalidate class="btn-ghost">취소</button>
+        <button value="ok" class="btn-primary">적용</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 카테고리 추가 -->
+  <dialog id="catDialog" class="dialog">
+    <form method="dialog" id="catForm">
+      <h2>새 카테고리</h2>
+      <label>id (영문 소문자, 주소에 쓰임) *<input name="id" required pattern="[a-z][a-z0-9-]{1,29}" placeholder="예: immune"></label>
+      <div class="row2">
+        <label>이름 *<input name="name" required maxlength="20" placeholder="예: 면역 건강"></label>
+        <label>아이콘<input name="icon" maxlength="4" placeholder="🛡️"></label>
+      </div>
+      <div class="row2">
+        <label>색상 1<input type="color" name="c1" value="#1f5a50"></label>
+        <label>색상 2<input type="color" name="c2" value="#5ec9a8"></label>
+      </div>
+      <p class="form-error" id="catError" hidden></p>
+      <div class="dialog-actions">
+        <button value="cancel" formnovalidate class="btn-ghost">취소</button>
+        <button value="ok" class="btn-primary">추가</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 카테고리 삭제 -->
+  <dialog id="delCatDialog" class="dialog">
+    <form method="dialog" id="delCatForm">
+      <h2 id="delCatTitle">카테고리 삭제</h2>
+      <p id="delCatInfo"></p>
+      <label class="check"><input type="radio" name="mode" value="move" checked> 대표 카테고리 영상을 다른 카테고리로 옮기기</label>
+      <label class="indent">옮길 카테고리<select name="target" id="delCatTarget"></select></label>
+      <label class="check"><input type="radio" name="mode" value="delete"> 대표 카테고리 영상도 함께 삭제</label>
+      <p class="muted small">추가 카테고리로만 들어 있던 영상은 삭제되지 않고 이 카테고리 표시만 빠집니다.</p>
+      <div class="dialog-actions">
+        <button value="cancel" formnovalidate class="btn-ghost">취소</button>
+        <button value="ok" class="btn-danger">삭제</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    document.write('<script src="/longevitube/js/admin.js?v=' + window.LT_V + '"><\/script>');
+  </script>
+</body>
+</html>
